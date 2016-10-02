@@ -1,0 +1,10 @@
+[package]
+name = "chimper"
+version = "0.1.0"
+authors = ["Pedro Côrte-Real <pedro@pedrocr.net>"]
+
+[dependencies]
+rawloader = { path = "../rawloader/" }
+conrod = "0.44.0"
+piston_window = "0.52.0"
+image = "0.10.3"

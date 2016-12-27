@@ -4,7 +4,9 @@ version = "0.1.0"
 authors = ["Pedro Côrte-Real <pedro@pedrocr.net>"]
 
 [dependencies]
-rawloader = { path = "../rawloader/" }
-conrod = "0.44.0"
-piston_window = "0.52.0"
-image = "0.10.3"
+rawloader = "0.21.0"
+conrod = "0.47.4"
+piston_window = "0.60.0"
+image = "0.10.4"
+find_folder = "0.3.0"
+rand = "0.3.15"

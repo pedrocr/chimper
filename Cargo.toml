@@ -5,9 +5,9 @@ authors = ["Pedro Côrte-Real <pedro@pedrocr.net>"]
 
 [dependencies]
 rawloader = "0.29.0"
-conrod = "0.47.4"
-piston_window = "0.60.0"
-image = "0.10.4"
+conrod = "0.48.0"
+piston_window = "0.61.0"
+image = "0.12.1"
 find_folder = "0.3.0"
 rand = "0.3.15"
 

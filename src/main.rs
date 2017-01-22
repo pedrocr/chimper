@@ -9,8 +9,6 @@ extern crate image;
 use image::ImageBuffer;
 
 extern crate rawloader;
-use rawloader::decoders;
-use rawloader::imageops;
 use std::env;
 use std::cmp;
 
@@ -95,9 +93,7 @@ fn main() {
 
 // Load the image from a file
 fn load_image(context: &mut GfxContext, path: &str) -> G2dTexture<'static> {
-  let rawloader = decoders::RawLoader::new();
-  let image = rawloader.decode_safe(path).unwrap();
-  let decoded = imageops::simple_decode(&image, 0, 0);
+  let decoded = rawloader::decode(path).unwrap().to_rgb(0, 0).unwrap();
 
   // Convert f32 RGB into u8 RGBA
   let mut buffer = vec![0 as u8; (decoded.width*decoded.height*4) as usize];

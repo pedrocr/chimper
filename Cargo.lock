@@ -7,7 +7,7 @@ dependencies = [
  "image 0.10.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "piston_window 0.60.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
- "rawloader 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rawloader 0.29.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -874,7 +874,7 @@ dependencies = [
 
 [[package]]
 name = "rawloader"
-version = "0.21.0"
+version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1251,7 +1251,7 @@ dependencies = [
 "checksum pkg-config 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)" = "8cee804ecc7eaf201a4a207241472cc870e825206f6c031e3ee2a72fa425f2fa"
 "checksum png 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "06208e2ee243e3118a55dda9318f821f206d8563fb8d4df258767f8e62bb0997"
 "checksum rand 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)" = "022e0636ec2519ddae48154b028864bdce4eaf7d35226ab8e65c611be97b189d"
-"checksum rawloader 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2bd20243ab8556add0b0647b5f4b7f064c787e45791e6ac11276569d8f24cf29"
+"checksum rawloader 0.29.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1ca61302bf40f2b2130ce3baa10e57ce9867a6affecd07b5dc45893b36aa1dc3"
 "checksum rayon 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "50c575b58c2b109e2fbc181820cbe177474f35610ff9e357dc75f6bac854ffbf"
 "checksum read_color 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "682bfa200630193df2954f2632b690c4643563fd6abc575edc1239bcfe57ad83"
 "checksum rustc-serialize 0.3.22 (registry+https://github.com/rust-lang/crates.io-index)" = "237546c689f20bb44980270c73c3b9edd0891c1be49cc1274406134a66d3957b"

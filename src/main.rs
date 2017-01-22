@@ -52,8 +52,9 @@ fn main() {
   let ilock = RwLock::new(conrod::image::Map::new());
   //thread::spawn(||
   {
+    let img = load_image(&wlock, &file);
     let mut image_map = ilock.write().unwrap();
-    image_map.insert(ids.raw_image, load_image(&wlock, &file));
+    image_map.insert(ids.raw_image, img);
   }//);
 
   // Poll events from the window.

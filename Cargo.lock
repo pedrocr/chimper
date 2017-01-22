@@ -3,9 +3,11 @@ name = "chimper"
 version = "0.1.0"
 dependencies = [
  "conrod 0.48.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "crossbeam 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "find_folder 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gfx_device_gl 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "image 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "piston_window 0.61.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "rawloader 0.29.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -159,6 +161,11 @@ dependencies = [
  "libc 0.2.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 0.8.23 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "crossbeam"
+version = "0.2.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "daggy"
@@ -1104,6 +1111,7 @@ dependencies = [
 "checksum core-foundation-sys 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "065a5d7ffdcbc8fa145d6f0746f3555025b9097a9e9cda59f7467abae670c78d"
 "checksum core-graphics 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "0c56c6022ba22aedbaa7d231be545778becbe1c7aceda4c82ba2f2084dd4c723"
 "checksum core-graphics 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "66e998abb8823fecd2a8a7205429b17a340d447d8c69b3bce86846dcdea3e33b"
+"checksum crossbeam 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)" = "0c5ea215664ca264da8a9d9c3be80d2eaf30923c259d03e870388eb927508f97"
 "checksum daggy 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "d6a9b61ac11d223e884f431772d311087644e4710c1555d7db270cefb5fb9c69"
 "checksum deflate 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)" = "eab23bda1e017b3408412dd8d1e81e157b8fe09af8abce809fbe0aa9e6c7da4d"
 "checksum deque 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "1614659040e711785ed8ea24219140654da1729f3ec8a47a9719d041112fe7bf"

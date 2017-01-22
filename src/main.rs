@@ -1,16 +1,19 @@
 #[macro_use] extern crate conrod;
 use conrod::{widget, Colorable, Positionable, Sizeable, Widget, color};
-use conrod::backend::piston::gfx::{GfxContext, G2dTexture, Texture, TextureSettings};
+use conrod::backend::piston::gfx::{G2dTexture, Texture, TextureSettings};
 use conrod::backend::piston::{self, Window, WindowEvents, OpenGL};
 use conrod::backend::piston::draw::ImageSize;
 use conrod::backend::piston::event::UpdateEvent;
+
+extern crate gfx_device_gl;
 
 extern crate image;
 use image::ImageBuffer;
 
 extern crate rawloader;
 use std::env;
-use std::cmp;
+use std::thread;
+use std::sync::RwLock;
 
 fn main() {
   let args: Vec<_> = env::args().collect();
@@ -45,54 +48,70 @@ fn main() {
   widget_ids!(struct Ids { background, raw_image });
   let ids = Ids::new(ui.widget_id_generator());
 
-  // Create our `conrod::image::Map` which describes each of our widget->image mappings.
-  // In our case we only have one image, however the macro may be used to list multiple.
-  let image_map = image_map! {
-    (ids.raw_image, load_image(&mut window.context, &file)),
-  };
-
-  // We'll instantiate the `Image` at its full size, so we'll retrieve its dimensions.
-  let (maxw, maxh) = image_map.get(&ids.raw_image).unwrap().get_size();
-  let scale = (maxw as f64)/(maxh as f64);
+  let wlock = RwLock::new(window);
+  let ilock = RwLock::new(conrod::image::Map::new());
+  //thread::spawn(||
+  {
+    let mut image_map = ilock.write().unwrap();
+    image_map.insert(ids.raw_image, load_image(&wlock, &file));
+  }//);
 
   // Poll events from the window.
-  while let Some(event) = window.next_event(&mut events) {
-    // Convert the piston event to a conrod input event.
-    if let Some(e) = piston::window::convert_event(event.clone(), &window) {
-        ui.handle_event(e);
-    }
+  loop {
+    let mut window = wlock.write().unwrap();
+    match (*window).next_event(&mut events) {
+      None => break,
+      Some(event) => {
+        // Convert the piston event to a conrod input event.
+        if let Some(e) = piston::window::convert_event(event.clone(), &window) {
+            ui.handle_event(e);
+        }
 
-    window.draw_2d(&event, |c, g| {
-      if let Some(primitives) = ui.draw_if_changed() {
-        fn texture_from_image<T>(img: &T) -> &T { img };
-        piston::window::draw(c, g, primitives,
-                                             &mut text_texture_cache,
-                                             &image_map,
-                                             texture_from_image);
+        let image_map = ilock.read().unwrap();
+
+        window.draw_2d(&event, |c, g| {
+          if let Some(primitives) = ui.draw_if_changed() {
+            fn texture_from_image<T>(img: &T) -> &T { img };
+            piston::window::draw(c, g, primitives,
+                                                 &mut text_texture_cache,
+                                                 &image_map,
+                                                 texture_from_image);
+          }
+        });
+
+        let (width,height) = window.window.window.get_inner_size_pixels().unwrap();
+        let mut width = width as f64;
+        let mut height = height as f64;
+
+        match image_map.get(&ids.raw_image) {
+          None => {},
+          Some(img) => {
+            let (maxw, maxh) = img.get_size();
+            let scale = (maxw as f64)/(maxh as f64);
+            width = width.min(maxw as f64);
+            height = height.min(maxh as f64);
+            if width/height > scale {
+              width = height * scale;
+            } else {
+              height = width / scale;
+            }
+          },
+        }
+
+        event.update(|_| {
+          let ui = &mut ui.set_widgets();
+          // Draw a light blue background.
+          widget::Canvas::new().color(color::BLACK).set(ids.background, ui);
+          // Instantiate the `Image` at its full size in the middle of the window.
+          widget::Image::new().w_h(width, height).middle().set(ids.raw_image, ui);
+        });
       }
-    });
-
-    let (width,height) = window.window.window.get_inner_size_pixels().unwrap();
-    let mut width = cmp::min(width, maxw) as f64;
-    let mut height = cmp::min(height, maxh) as f64;
-    if width/height > scale {
-      width = height * scale;
-    } else {
-      height = width / scale;
     }
-
-    event.update(|_| {
-      let ui = &mut ui.set_widgets();
-      // Draw a light blue background.
-      widget::Canvas::new().color(color::BLACK).set(ids.background, ui);
-      // Instantiate the `Image` at its full size in the middle of the window.
-      widget::Image::new().w_h(width, height).middle().set(ids.raw_image, ui);
-    });
   }
 }
 
 // Load the image from a file
-fn load_image(context: &mut GfxContext, path: &str) -> G2dTexture<'static> {
+fn load_image(wlock: &RwLock<Window>, path: &str) -> G2dTexture<'static> {
   let decoded = rawloader::decode(path).unwrap().to_rgb(0, 0).unwrap();
 
   // Convert f32 RGB into u8 RGBA
@@ -105,7 +124,8 @@ fn load_image(context: &mut GfxContext, path: &str) -> G2dTexture<'static> {
   }  
   let imgbuf = ImageBuffer::from_raw(decoded.width as u32, decoded.height as u32, buffer).unwrap();
 
-  let factory = &mut context.factory;
   let settings = TextureSettings::new();
+  let mut window = wlock.write().unwrap();
+  let factory = &mut window.context.factory;
   Texture::from_image(factory, &imgbuf, &settings).unwrap()
 }

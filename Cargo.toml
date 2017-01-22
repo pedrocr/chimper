@@ -10,3 +10,10 @@ piston_window = "0.60.0"
 image = "0.10.4"
 find_folder = "0.3.0"
 rand = "0.3.15"
+
+[profile.release]
+panic = "unwind"
+
+[profile.dev]
+panic = "unwind"
+opt-level = 3

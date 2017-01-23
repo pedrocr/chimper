@@ -1,6 +1,6 @@
 #[macro_use] extern crate conrod;
 use conrod::{widget, Colorable, Positionable, Sizeable, Widget, color};
-use conrod::backend::piston::gfx::{Texture, TextureSettings};
+use conrod::backend::piston::gfx::{GfxContext, G2dTexture, Texture, TextureSettings};
 use conrod::backend::piston::{self, Window, WindowEvents, OpenGL};
 use conrod::backend::piston::draw::ImageSize;
 use conrod::backend::piston::event::UpdateEvent;
@@ -52,14 +52,16 @@ fn main() {
   let mut text_texture_cache = piston::window::GlyphCache::new(&mut window, 0, 0);
 
   // The `WidgetId` for our background and `Image` widgets.
-  widget_ids!(struct Ids { background, raw_image });
+  widget_ids!(struct Ids { background, raw_image, chimper });
   let ids = Ids::new(ui.widget_id_generator());
 
-  let mut image_map = conrod::image::Map::new();
-
+  let logo = include_bytes!("../icons/chimp1.png");
+  let mut image_map = image_map! {
+      (ids.chimper, load_image(logo, &mut window.context)),
+  };
 
   crossbeam::scope(|scope| {
-    load_image(&file, scope);
+    load_raw(&file, scope);
 
     // Poll events from the window.
     while let Some(event) = window.next_event(&mut events) {
@@ -99,8 +101,9 @@ fn main() {
         None => {},
         Some(img) => {
           let (maxw, maxh) = img.get_size();
+          let maxw = maxw;
           let scale = (maxw as f64)/(maxh as f64);
-          width = width.min(maxw as f64);
+          width = (width-90.0).min(maxw as f64);
           height = height.min(maxh as f64);
           if width/height > scale {
             width = height * scale;
@@ -112,17 +115,16 @@ fn main() {
 
       event.update(|_| {
         let ui = &mut ui.set_widgets();
-        // Draw a light blue background.
-        widget::Canvas::new().color(color::BLACK).set(ids.background, ui);
-        // Instantiate the `Image` at its full size in the middle of the window.
-        widget::Image::new().w_h(width, height).middle().set(ids.raw_image, ui);
+        widget::Canvas::new().color(color::CHARCOAL).set(ids.background, ui);
+        widget::Image::new().w_h(width, height).top_left().set(ids.raw_image, ui);
+        widget::Image::new().w_h(78.0, 88.0).top_right_with_margin(6.0).set(ids.chimper, ui);
       });
     }
   });
 }
 
 // Load the image from a file
-fn load_image<'a>(path: &'a str, scope: &crossbeam::Scope<'a>) {
+fn load_raw<'a>(path: &'a str, scope: &crossbeam::Scope<'a>) {
   let file = path.to_string();
 
   scope.spawn(move || {
@@ -139,4 +141,12 @@ fn load_image<'a>(path: &'a str, scope: &crossbeam::Scope<'a>) {
     let mut image_cache = ILOCK.write().unwrap();
     image_cache.insert(file, img);
   });
+}
+
+// Load the image from a file
+fn load_image(buf: &[u8], context: &mut GfxContext) -> G2dTexture<'static> {
+  let img = image::load_from_memory(buf).unwrap().to_rgba();
+  let factory = &mut context.factory;
+  let settings = TextureSettings::new();
+  Texture::from_image(factory, &img, &settings).unwrap()
 }

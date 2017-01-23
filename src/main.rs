@@ -128,7 +128,7 @@ fn load_raw<'a>(path: &'a str, scope: &crossbeam::Scope<'a>) {
   let file = path.to_string();
 
   scope.spawn(move || {
-    let decoded = rawloader::decode(path).unwrap().to_rgb(0, 0).unwrap();
+    let decoded = rawloader::decode(path).unwrap().to_rgb(2560, 1440).unwrap();
     // Convert f32 RGB into u8 RGBA
     let mut buffer = vec![0 as u8; (decoded.width*decoded.height*4) as usize];
     for (pixin, pixout) in decoded.data.chunks(3).zip(buffer.chunks_mut(4)) {

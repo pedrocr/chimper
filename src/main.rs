@@ -18,6 +18,9 @@ use std::collections::HashMap;
 
 extern crate crossbeam;
 
+extern crate rand;
+use rand::distributions::{IndependentSample, Range};
+
 lazy_static! {
   static ref ILOCK: RwLock<HashMap<String, ImageBuffer<Rgba<u8>, Vec<u8>>>> = RwLock::new(HashMap::new());
 }
@@ -55,9 +58,23 @@ fn main() {
   widget_ids!(struct Ids { background, raw_image, chimper });
   let ids = Ids::new(ui.widget_id_generator());
 
-  let logo = include_bytes!("../icons/chimp1.png");
+  let mut logos = Vec::<&'static [u8]>::new();
+  logos.push(include_bytes!("../icons/chimp1.svg.png"));
+  logos.push(include_bytes!("../icons/chimp2.svg.png"));
+  logos.push(include_bytes!("../icons/chimp3.svg.png"));
+  logos.push(include_bytes!("../icons/chimp4.svg.png"));
+  logos.push(include_bytes!("../icons/chimp5.svg.png"));
+  logos.push(include_bytes!("../icons/chimp6.svg.png"));
+  logos.push(include_bytes!("../icons/chimp7.svg.png"));
+  logos.push(include_bytes!("../icons/chimp8.svg.png"));
+  logos.push(include_bytes!("../icons/chimp9.svg.png"));
+
+  let between = Range::new(0, logos.len());
+  let mut rng = rand::thread_rng();
+  let idx = between.ind_sample(&mut rng);
+
   let mut image_map = image_map! {
-      (ids.chimper, load_image(logo, &mut window.context)),
+      (ids.chimper, load_image(logos[idx], &mut window.context)),
   };
 
   crossbeam::scope(|scope| {

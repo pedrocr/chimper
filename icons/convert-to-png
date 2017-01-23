@@ -1,0 +1,5 @@
+#!/bin/sh
+
+for f in `ls chimp?.svg`; do
+  inkscape $f --export-png=$f.png;
+done

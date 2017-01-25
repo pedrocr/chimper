@@ -22,7 +22,26 @@ extern crate rand;
 use rand::distributions::{IndependentSample, Range};
 
 lazy_static! {
-  static ref ILOCK: RwLock<HashMap<String, ImageBuffer<Rgba<u8>, Vec<u8>>>> = RwLock::new(HashMap::new());
+  static ref ILOCK: RwLock<HashMap<(String, usize), ImageBuffer<Rgba<u8>, Vec<u8>>>> = RwLock::new(HashMap::new());
+}
+
+const SIZES: [[usize;2];7] = [
+  [640, 480],   //  0,3MP - Small thumbnail
+  [1400, 800],  //  1,1MP - 720p+
+  [2000, 1200], //  2,4MP - 1080p+
+  [2600, 1600], //  4,2MP - WQXGA
+  [4100, 2200], //  9,0MP - 4K
+  [5200, 2900], // 15,1MP - 5K
+  [0, 0],       // Go full size above 5K
+];
+
+fn smallest_size(width: usize, height: usize) -> usize {
+  for (i,vals) in SIZES.iter().enumerate() {
+    if vals[0] >= width && vals[1] >= height {
+      return i
+    }
+  }
+  return SIZES.len() - 1
 }
 
 fn main() {
@@ -77,9 +96,9 @@ fn main() {
       (ids.chimper, load_image(logos[idx], &mut window.context)),
   };
 
+  let mut currsize = 0 as usize; // Initially set the image size to smallest
+  let mut changesize = 1000 as usize; // When we start we are not changing to any other size
   crossbeam::scope(|scope| {
-    load_raw(&file, scope);
-
     // Poll events from the window.
     while let Some(event) = window.next_event(&mut events) {
       // Convert the piston event to a conrod input event.
@@ -98,22 +117,30 @@ fn main() {
       });
 
       let (width,height) = window.window.window.get_inner_size_pixels().unwrap();
-      let mut width = width as f64;
-      let mut height = height as f64;
+      let size = smallest_size(width as usize, height as usize);
 
-      if image_map.get(&ids.raw_image).is_none() {
+      if image_map.get(&ids.raw_image).is_none() || size != currsize {
         let image_cache = ILOCK.read().unwrap();
-        match image_cache.get(file) {
-          None => {},
+        match image_cache.get(&(file.clone(), size)) {
+          None => {
+            if size != changesize {
+              // First time we have found the change launch the thread to load the image
+              load_raw(&file, size, scope);
+            }
+            changesize = size;
+          },
           Some(imgbuf) => {
             let settings = TextureSettings::new();
             let factory = &mut window.context.factory;
             let img = Texture::from_image(factory, &imgbuf, &settings).unwrap();
             image_map.insert(ids.raw_image, img);
+            currsize = size;
           },
         }
       }
 
+      let mut width = width as f64;
+      let mut height = height as f64;
       match image_map.get(&ids.raw_image) {
         None => {},
         Some(img) => {
@@ -141,11 +168,13 @@ fn main() {
 }
 
 // Load the image from a file
-fn load_raw<'a>(path: &'a str, scope: &crossbeam::Scope<'a>) {
+fn load_raw<'a>(path: &'a str, size: usize, scope: &crossbeam::Scope<'a>) {
   let file = path.to_string();
+  let maxwidth = SIZES[size][0];
+  let maxheight = SIZES[size][1];
 
   scope.spawn(move || {
-    let decoded = rawloader::decode(path).unwrap().to_rgb(2560, 1440).unwrap();
+    let decoded = rawloader::decode(path).unwrap().to_rgb(maxwidth, maxheight).unwrap();
     // Convert f32 RGB into u8 RGBA
     let mut buffer = vec![0 as u8; (decoded.width*decoded.height*4) as usize];
     for (pixin, pixout) in decoded.data.chunks(3).zip(buffer.chunks_mut(4)) {
@@ -156,7 +185,7 @@ fn load_raw<'a>(path: &'a str, scope: &crossbeam::Scope<'a>) {
     }
     let img = ImageBuffer::from_raw(decoded.width as u32, decoded.height as u32, buffer).unwrap();
     let mut image_cache = ILOCK.write().unwrap();
-    image_cache.insert(file, img);
+    image_cache.insert((file, size), img);
   });
 }
 

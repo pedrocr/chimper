@@ -7,42 +7,16 @@ use conrod::backend::piston::event::UpdateEvent;
 
 extern crate gfx_device_gl;
 
-extern crate image;
-use image::{ImageBuffer, Rgba};
-
-extern crate rawloader;
 use std::env;
-use std::sync::RwLock;
-use std::collections::HashMap;
 #[macro_use] extern crate lazy_static;
-
-extern crate crossbeam;
 
 extern crate rand;
 use rand::distributions::{IndependentSample, Range};
 
-lazy_static! {
-  static ref ILOCK: RwLock<HashMap<(String, usize), ImageBuffer<Rgba<u8>, Vec<u8>>>> = RwLock::new(HashMap::new());
-}
+extern crate crossbeam;
+extern crate image;
 
-const SIZES: [[usize;2];7] = [
-  [640, 480],   //  0,3MP - Small thumbnail
-  [1400, 800],  //  1,1MP - 720p+
-  [2000, 1200], //  2,4MP - 1080p+
-  [2600, 1600], //  4,2MP - WQXGA
-  [4100, 2200], //  9,0MP - 4K
-  [5200, 2900], // 15,1MP - 5K
-  [0, 0],       // Go full size above 5K
-];
-
-fn smallest_size(width: usize, height: usize) -> usize {
-  for (i,vals) in SIZES.iter().enumerate() {
-    if vals[0] >= width && vals[1] >= height {
-      return i
-    }
-  }
-  return SIZES.len() - 1
-}
+mod cache;
 
 fn main() {
   let args: Vec<_> = env::args().collect();
@@ -97,7 +71,7 @@ fn main() {
   };
 
   let mut currsize = 0 as usize; // Initially set the image size to smallest
-  let mut changesize = 1000 as usize; // When we start we are not changing to any other size
+  let icache = cache::ImageCache::new();
   crossbeam::scope(|scope| {
     // Poll events from the window.
     while let Some(event) = window.next_event(&mut events) {
@@ -117,18 +91,11 @@ fn main() {
       });
 
       let (width,height) = window.window.window.get_inner_size_pixels().unwrap();
-      let size = smallest_size(width as usize, height as usize);
+      let size = icache.smallest_size(width as usize, height as usize);
 
       if image_map.get(&ids.raw_image).is_none() || size != currsize {
-        let image_cache = ILOCK.read().unwrap();
-        match image_cache.get(&(file.clone(), size)) {
-          None => {
-            if size != changesize {
-              // First time we have found the change launch the thread to load the image
-              load_raw(&file, size, scope);
-            }
-            changesize = size;
-          },
+        match icache.get(&file, size, scope) {
+          None => {},
           Some(imgbuf) => {
             let settings = TextureSettings::new();
             let factory = &mut window.context.factory;
@@ -164,28 +131,6 @@ fn main() {
         widget::Image::new().w_h(78.0, 88.0).top_right_with_margin(6.0).set(ids.chimper, ui);
       });
     }
-  });
-}
-
-// Load the image from a file
-fn load_raw<'a>(path: &'a str, size: usize, scope: &crossbeam::Scope<'a>) {
-  let file = path.to_string();
-  let maxwidth = SIZES[size][0];
-  let maxheight = SIZES[size][1];
-
-  scope.spawn(move || {
-    let decoded = rawloader::decode(path).unwrap().to_rgb(maxwidth, maxheight).unwrap();
-    // Convert f32 RGB into u8 RGBA
-    let mut buffer = vec![0 as u8; (decoded.width*decoded.height*4) as usize];
-    for (pixin, pixout) in decoded.data.chunks(3).zip(buffer.chunks_mut(4)) {
-      pixout[0] = (pixin[0]*255.0).max(0.0).min(255.0) as u8;
-      pixout[1] = (pixin[1]*255.0).max(0.0).min(255.0) as u8;
-      pixout[2] = (pixin[2]*255.0).max(0.0).min(255.0) as u8;
-      pixout[3] = 255;
-    }
-    let img = ImageBuffer::from_raw(decoded.width as u32, decoded.height as u32, buffer).unwrap();
-    let mut image_cache = ILOCK.write().unwrap();
-    image_cache.insert((file, size), img);
   });
 }
 

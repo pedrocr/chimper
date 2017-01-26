@@ -1,7 +1,7 @@
 #[macro_use] extern crate conrod;
 use conrod::{widget, Colorable, Positionable, Sizeable, Widget, color};
 use conrod::backend::piston::gfx::{GfxContext, G2dTexture, Texture, TextureSettings};
-use conrod::backend::piston::{self, Window, WindowEvents, OpenGL};
+use conrod::backend::piston::{self, Window, WindowEvents};
 use conrod::backend::piston::draw::ImageSize;
 use conrod::backend::piston::event::UpdateEvent;
 
@@ -27,16 +27,13 @@ fn main() {
   let file = &args[1];
   println!("Loading file \"{}\"", file);
 
-  const WIDTH: u32 = 800;
-  const HEIGHT: u32 = 600;
-
-  // Change this to OpenGL::V2_1 if not working.
-  let opengl = OpenGL::V3_2;
+  const WIDTH: u32 = 1200;
+  const HEIGHT: u32 = 800;
 
   // Construct the window.
   let mut window: Window =
     piston::window::WindowSettings::new("Chimper", [WIDTH, HEIGHT])
-      .opengl(opengl).exit_on_esc(true).vsync(true).samples(4).build().unwrap();
+      .exit_on_esc(true).vsync(true).build().unwrap();
 
   // Create the event loop.
   let mut events = WindowEvents::new();

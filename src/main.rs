@@ -50,6 +50,8 @@ fn main() {
   };
 
   let mut currsize = 0 as usize; // Initially set the image size to smallest
+  let sidewidth = 600.0;
+  let imagepadding = 20.0;
   let icache = cache::ImageCache::new();
   crossbeam::scope(|scope| {
     // Poll events from the window.
@@ -58,16 +60,6 @@ fn main() {
       if let Some(e) = piston::window::convert_event(event.clone(), &window) {
           ui.handle_event(e);
       }
-
-      window.draw_2d(&event, |c, g| {
-        if let Some(primitives) = ui.draw_if_changed() {
-          fn texture_from_image<T>(img: &T) -> &T { img };
-          piston::window::draw(c, g, primitives,
-                                               &mut text_texture_cache,
-                                               &image_map,
-                                               texture_from_image);
-        }
-      });
 
       let (width,height) = window.window.window.get_inner_size_pixels().unwrap();
       let size = icache.smallest_size(width as usize, height as usize);
@@ -93,8 +85,8 @@ fn main() {
           let (maxw, maxh) = img.get_size();
           let maxw = maxw;
           let scale = (maxw as f64)/(maxh as f64);
-          width = (width-620.0).min(maxw as f64);
-          height = (height-20.0).min(maxh as f64);
+          width = (width-sidewidth-imagepadding).min(maxw as f64);
+          height = (height-imagepadding).min(maxh as f64);
           if width/height > scale {
             width = height * scale;
           } else {
@@ -103,19 +95,33 @@ fn main() {
         },
       }
 
+      if let Some(e)
+
       event.update(|_| {
         let ui = &mut ui.set_widgets();
 
         // Construct our main `Canvas` tree.
         widget::Canvas::new().flow_right(&[
             (ids.imgcanvas, widget::Canvas::new().color(color::CHARCOAL).border(0.0)),
-            (ids.setcanvas, widget::Canvas::new().color(color::GREY).length(600.0).border(0.0)),
+            (ids.setcanvas, widget::Canvas::new().color(color::GREY).length(sidewidth).border(0.0)),
         ]).border(0.0).set(ids.background, ui);
 
         widget::Image::new().w_h(width, height).top_left().middle_of(ids.imgcanvas)
           .set(ids.raw_image, ui);
-        widget::Image::new().w_h(78.0, 88.0).top_right_with_margin_on(ids.setcanvas, 6.0)
-          .set(ids.chimper, ui);
+        if sidewidth > 0.0 {
+          widget::Image::new().w_h(78.0, 88.0).top_right_with_margin_on(ids.setcanvas, 6.0)
+            .set(ids.chimper, ui);
+        }
+      });
+
+      window.draw_2d(&event, |c, g| {
+        if let Some(primitives) = ui.draw_if_changed() {
+          fn texture_from_image<T>(img: &T) -> &T { img };
+          piston::window::draw(c, g, primitives,
+                                               &mut text_texture_cache,
+                                               &image_map,
+                                               texture_from_image);
+        }
       });
     }
   });

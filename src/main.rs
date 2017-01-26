@@ -9,14 +9,11 @@ extern crate gfx_device_gl;
 
 use std::env;
 #[macro_use] extern crate lazy_static;
-
-extern crate rand;
-use rand::distributions::{IndependentSample, Range};
-
 extern crate crossbeam;
 extern crate image;
 
 mod cache;
+mod logo;
 
 fn main() {
   let args: Vec<_> = env::args().collect();
@@ -48,23 +45,8 @@ fn main() {
   widget_ids!(struct Ids { background, imgcanvas, setcanvas, raw_image, chimper });
   let ids = Ids::new(ui.widget_id_generator());
 
-  let mut logos = Vec::<&'static [u8]>::new();
-  logos.push(include_bytes!("../icons/chimp1.svg.png"));
-  logos.push(include_bytes!("../icons/chimp2.svg.png"));
-  logos.push(include_bytes!("../icons/chimp3.svg.png"));
-  logos.push(include_bytes!("../icons/chimp4.svg.png"));
-  logos.push(include_bytes!("../icons/chimp5.svg.png"));
-  logos.push(include_bytes!("../icons/chimp6.svg.png"));
-  logos.push(include_bytes!("../icons/chimp7.svg.png"));
-  logos.push(include_bytes!("../icons/chimp8.svg.png"));
-  logos.push(include_bytes!("../icons/chimp9.svg.png"));
-
-  let between = Range::new(0, logos.len());
-  let mut rng = rand::thread_rng();
-  let idx = between.ind_sample(&mut rng);
-
   let mut image_map = image_map! {
-      (ids.chimper, load_image(logos[idx], &mut window.context)),
+      (ids.chimper, load_image(logo::random(), &mut window.context)),
   };
 
   let mut currsize = 0 as usize; // Initially set the image size to smallest

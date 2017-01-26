@@ -1,5 +1,5 @@
 #[macro_use] extern crate conrod;
-use conrod::{widget, Colorable, Positionable, Sizeable, Widget, color};
+use conrod::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, color};
 use conrod::backend::piston::gfx::{GfxContext, G2dTexture, Texture, TextureSettings};
 use conrod::backend::piston::{self, Window, WindowEvents};
 use conrod::backend::piston::draw::ImageSize;
@@ -45,7 +45,7 @@ fn main() {
   let mut text_texture_cache = piston::window::GlyphCache::new(&mut window, 0, 0);
 
   // The `WidgetId` for our background and `Image` widgets.
-  widget_ids!(struct Ids { background, raw_image, chimper });
+  widget_ids!(struct Ids { background, imgcanvas, setcanvas, raw_image, chimper });
   let ids = Ids::new(ui.widget_id_generator());
 
   let mut logos = Vec::<&'static [u8]>::new();
@@ -111,8 +111,8 @@ fn main() {
           let (maxw, maxh) = img.get_size();
           let maxw = maxw;
           let scale = (maxw as f64)/(maxh as f64);
-          width = (width-90.0).min(maxw as f64);
-          height = height.min(maxh as f64);
+          width = (width-620.0).min(maxw as f64);
+          height = (height-20.0).min(maxh as f64);
           if width/height > scale {
             width = height * scale;
           } else {
@@ -123,9 +123,17 @@ fn main() {
 
       event.update(|_| {
         let ui = &mut ui.set_widgets();
-        widget::Canvas::new().color(color::CHARCOAL).set(ids.background, ui);
-        widget::Image::new().w_h(width, height).top_left().set(ids.raw_image, ui);
-        widget::Image::new().w_h(78.0, 88.0).top_right_with_margin(6.0).set(ids.chimper, ui);
+
+        // Construct our main `Canvas` tree.
+        widget::Canvas::new().flow_right(&[
+            (ids.imgcanvas, widget::Canvas::new().color(color::CHARCOAL).border(0.0)),
+            (ids.setcanvas, widget::Canvas::new().color(color::GREY).length(600.0).border(0.0)),
+        ]).border(0.0).set(ids.background, ui);
+
+        widget::Image::new().w_h(width, height).top_left().middle_of(ids.imgcanvas)
+          .set(ids.raw_image, ui);
+        widget::Image::new().w_h(78.0, 88.0).top_right_with_margin_on(ids.setcanvas, 6.0)
+          .set(ids.chimper, ui);
       });
     }
   });

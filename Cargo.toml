@@ -5,11 +5,8 @@ authors = ["Pedro Côrte-Real <pedro@pedrocr.net>"]
 
 [dependencies]
 rawloader = "0.30.0"
-gfx_device_gl = "0.13.0"
-image = "0.12.1"
-find_folder = "0.3.0"
+image = "0.12.2"
 rand = "0.3.15"
-lazy_static = "0.2.2"
 crossbeam = "0.2.10"
 
 [dependencies.conrod]

@@ -3,11 +3,7 @@ use conrod::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, colo
 use conrod::backend::glium::glium;
 use conrod::backend::glium::glium::{DisplayBuild, Surface};
 use conrod::backend::glium::glium::glutin::{Event, ElementState, VirtualKeyCode};
-
-extern crate gfx_device_gl;
-
 use std::env;
-#[macro_use] extern crate lazy_static;
 extern crate crossbeam;
 extern crate image;
 

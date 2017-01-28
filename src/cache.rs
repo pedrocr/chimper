@@ -6,6 +6,8 @@ use std::sync::RwLock;
 use std::sync::Arc;
 use std::collections::HashMap;
 
+use event::UIContext;
+
 const SIZES: [[usize;2];7] = [
   [640, 480],   //  0,3MP - Small thumbnail
   [1400, 800],  //  1,1MP - 720p+
@@ -36,7 +38,7 @@ impl ImageCache {
     return SIZES.len() - 1
   }
 
-  pub fn get<'a>(&'a self, path: &'a str, size: usize, scope: &crossbeam::Scope<'a>) -> Option<Arc<ImageBuffer<Rgba<u8>, Vec<u8>>>> {
+  pub fn get<'a>(&'a self, path: &'a str, size: usize, scope: &crossbeam::Scope<'a>, ui: &'a UIContext) -> Option<Arc<ImageBuffer<Rgba<u8>, Vec<u8>>>> {
     if let Some(img) = self.images.read().unwrap().get(&(path.to_string(), size)) {
       // We found at least an empty guard value, return that cloned to activate Arc
       return img.clone()
@@ -44,11 +46,11 @@ impl ImageCache {
 
     // Write a None to avoid any reissues of the same thread
     self.images.write().unwrap().insert((path.to_string(), size), None);
-    self.load_raw(path, size, scope);
+    self.load_raw(path, size, scope, ui);
     None
   }
 
-  fn load_raw<'a>(&'a self, path: &'a str, size: usize, scope: &crossbeam::Scope<'a>) {
+  fn load_raw<'a>(&'a self, path: &'a str, size: usize, scope: &crossbeam::Scope<'a>, ui: &'a UIContext) {
     let file = path.to_string();
     let maxwidth = SIZES[size][0];
     let maxheight = SIZES[size][1];
@@ -66,6 +68,7 @@ impl ImageCache {
       }
       let img = ImageBuffer::from_raw(decoded.width as u32, decoded.height as u32, buffer).unwrap();
       images.write().unwrap().insert((file, size), Some(Arc::new(img)));
+      ui.needs_update();
     });
   }
 }

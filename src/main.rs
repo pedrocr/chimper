@@ -48,16 +48,16 @@ fn main() {
   let logoid = image_map.insert(load_image(logo::random(), &display));
   let mut rawid: Option<conrod::image::Id> = None;
 
-  let mut currsize = 0 as usize; // Initially set the image size to smallest
+  let mut currsize = 1000 as usize; // Initially set the image size to an impossible size
   let sidewidth = 600.0;
   let imagepadding = 20.0;
   let icache = cache::ImageCache::new();
+  let context = event::UIContext::new();
   crossbeam::scope(|scope| {
     // Poll events from the window.
-    let mut event_loop = event::EventLoop::new();
     'main: loop {
       // Handle all events.
-      for event in event_loop.next(&display) {
+      for event in context.next(&display) {
         // Use the `winit` backend feature to convert the winit event to a conrod one.
         if let Some(event) = conrod::backend::winit::convert(event.clone(), &display) {
             ui.handle_event(event);
@@ -76,7 +76,7 @@ fn main() {
       let size = icache.smallest_size(width as usize, height as usize);
 
       if size != currsize {
-        match icache.get(&file, size, scope) {
+        match icache.get(&file, size, scope, &context) {
           None => {},
           Some(imgbuf) => {
             let dims = imgbuf.dimensions();

@@ -50,6 +50,7 @@ fn main() {
 
   let mut currsize = 1000 as usize; // Initially set the image size to an impossible size
   let sidewidth = 600.0;
+  let mut use_sidepane = true;
   let imagepadding = 20.0;
   let icache = cache::ImageCache::new();
   let context = event::UIContext::new();
@@ -68,6 +69,10 @@ fn main() {
           glium::glutin::Event::KeyboardInput(_, _, Some(glium::glutin::VirtualKeyCode::Escape)) |
           glium::glutin::Event::Closed =>
             break 'main,
+          glium::glutin::Event::KeyboardInput(glium::glutin::ElementState::Pressed, _, Some(glium::glutin::VirtualKeyCode::Tab)) => {
+            use_sidepane = !use_sidepane;
+          }
+
           _ => {},
         }
       }
@@ -89,6 +94,7 @@ fn main() {
         }
       }
 
+      let sidewidth = sidewidth * ((use_sidepane as u8) as f64);
       {
         let ui = &mut ui.set_widgets();
 

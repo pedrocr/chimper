@@ -55,7 +55,7 @@ impl ImageCache {
     let images = &self.images;
 
     scope.spawn(move || {
-      let decoded = rawloader::decode(path).unwrap().to_rgb(maxwidth, maxheight).unwrap();
+      let decoded = rawloader::decode(path).unwrap().to_linear_rgb(maxwidth, maxheight).unwrap();
       // Convert f32 RGB into u8 RGBA
       let mut buffer = vec![0 as u8; (decoded.width*decoded.height*4) as usize];
       for (pixin, pixout) in decoded.data.chunks(3).zip(buffer.chunks_mut(4)) {

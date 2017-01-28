@@ -4,15 +4,17 @@ version = "0.1.0"
 authors = ["Pedro Côrte-Real <pedro@pedrocr.net>"]
 
 [dependencies]
-rawloader = "0.29.0"
-conrod = "0.48.0"
+rawloader = "0.30.0"
 gfx_device_gl = "0.13.0"
-piston_window = "0.61.0"
 image = "0.12.1"
 find_folder = "0.3.0"
 rand = "0.3.15"
 lazy_static = "0.2.2"
 crossbeam = "0.2.10"
+
+[dependencies.conrod]
+version = "0.50.0"
+features = ["glium", "winit"]
 
 [profile.release]
 panic = "unwind"

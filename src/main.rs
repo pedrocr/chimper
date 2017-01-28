@@ -50,12 +50,12 @@ fn main() {
   let mut use_sidepane = true;
   let imagepadding = 20.0;
   let icache = cache::ImageCache::new();
-  let context = event::UIContext::new();
+  let context = event::UIContext::new(&display);
   crossbeam::scope(|scope| {
     // Poll events from the window.
     'main: loop {
       // Handle all events.
-      for event in context.next(&display) {
+      if let Some(event) = context.next(&display) {
         // Use the `winit` backend feature to convert the winit event to a conrod one.
         if let Some(event) = conrod::backend::winit::convert(event.clone(), &display) {
             ui.handle_event(event);

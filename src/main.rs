@@ -2,6 +2,7 @@
 use conrod::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, color};
 use conrod::backend::glium::glium;
 use conrod::backend::glium::glium::{DisplayBuild, Surface};
+use conrod::backend::glium::glium::glutin::{Event, ElementState, VirtualKeyCode};
 
 extern crate gfx_device_gl;
 
@@ -66,13 +67,13 @@ fn main() {
 
         match event {
           // Break from the loop upon `Escape`.
-          glium::glutin::Event::KeyboardInput(_, _, Some(glium::glutin::VirtualKeyCode::Escape)) |
-          glium::glutin::Event::Closed =>
-            break 'main,
-          glium::glutin::Event::KeyboardInput(glium::glutin::ElementState::Pressed, _, Some(glium::glutin::VirtualKeyCode::Tab)) => {
+          Event::KeyboardInput(_, _, Some(VirtualKeyCode::Escape)) |
+          Event::Closed => {
+            break 'main
+          },
+          Event::KeyboardInput(ElementState::Pressed, _, Some(VirtualKeyCode::Tab)) => {
             use_sidepane = !use_sidepane;
-          }
-
+          },
           _ => {},
         }
       }

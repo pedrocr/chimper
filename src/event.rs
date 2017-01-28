@@ -21,11 +21,16 @@ impl UIContext {
     //        display also fire needs_update() calls and then we could bump the timeout
     //        to something much higher or even just use wait()
     loop {
+      events.extend(display.poll_events());
+      if !events.is_empty() {
+        break;
+      }
+
       let &(ref lock, ref cvar) = &*self.pair;
       let guard = lock.lock().unwrap();
       let mut needs_update = cvar.wait_timeout(guard, Duration::from_millis(16)).unwrap().0;
-      events.extend(display.poll_events());
-      if !events.is_empty() || *needs_update {
+
+      if *needs_update {
         *needs_update = false;
         break;
       }

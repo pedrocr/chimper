@@ -1,6 +1,5 @@
 extern crate crossbeam;
 extern crate image;
-use self::image::{ImageBuffer, Rgba};
 extern crate rawloader;
 use std::sync::RwLock;
 use std::sync::Arc;
@@ -19,7 +18,7 @@ const SIZES: [[usize;2];7] = [
 ];
 
 pub struct ImageCache {
-  images: RwLock<HashMap<(String, usize), Option<Arc<ImageBuffer<Rgba<u8>, Vec<u8>>>>>>,
+  images: RwLock<HashMap<(String, usize), Option<Arc<rawloader::RGBImage>>>>,
 }
 
 impl ImageCache {
@@ -38,7 +37,7 @@ impl ImageCache {
     return SIZES.len() - 1
   }
 
-  pub fn get<'a>(&'a self, path: &'a str, size: usize, scope: &crossbeam::Scope<'a>, ui: &'a UIContext) -> Option<Arc<ImageBuffer<Rgba<u8>, Vec<u8>>>> {
+  pub fn get<'a>(&'a self, path: &'a str, size: usize, scope: &crossbeam::Scope<'a>, ui: &'a UIContext) -> Option<Arc<rawloader::RGBImage>> {
     if let Some(img) = self.images.read().unwrap().get(&(path.to_string(), size)) {
       // We found at least an empty guard value, return that cloned to activate Arc
       return img.clone()
@@ -58,16 +57,7 @@ impl ImageCache {
 
     scope.spawn(move || {
       let decoded = rawloader::decode(path).unwrap().to_linear_rgb(maxwidth, maxheight).unwrap();
-      // Convert f32 RGB into u8 RGBA
-      let mut buffer = vec![0 as u8; (decoded.width*decoded.height*4) as usize];
-      for (pixin, pixout) in decoded.data.chunks(3).zip(buffer.chunks_mut(4)) {
-        pixout[0] = (pixin[0]*255.0).max(0.0).min(255.0) as u8;
-        pixout[1] = (pixin[1]*255.0).max(0.0).min(255.0) as u8;
-        pixout[2] = (pixin[2]*255.0).max(0.0).min(255.0) as u8;
-        pixout[3] = 255;
-      }
-      let img = ImageBuffer::from_raw(decoded.width as u32, decoded.height as u32, buffer).unwrap();
-      images.write().unwrap().insert((file, size), Some(Arc::new(img)));
+      images.write().unwrap().insert((file, size), Some(Arc::new(decoded)));
       ui.needs_update();
     });
   }

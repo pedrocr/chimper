@@ -81,9 +81,15 @@ fn main() {
         match icache.get(&file, size, scope, &context) {
           None => {},
           Some(imgbuf) => {
-            let dims = imgbuf.dimensions();
-            let img = (*imgbuf).clone().into_raw();
-            let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(img, dims);
+            let dims = (imgbuf.width as u32, imgbuf.height as u32);
+            // FIXME:: We should be able to just pass (*imgbuf).data.clone() to glium
+            //         but it's currently crashing on those. Bug submitted:
+            //         https://github.com/tomaka/glium/issues/1566
+            let mut img = vec![0 as u8; imgbuf.data.len()];
+            for (o, i) in img.chunks_mut(1).zip(imgbuf.data.chunks(1)) {
+              o[0] = (i[0]*255.0).max(0.0).min(255.0) as u8;
+            }
+            let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(img, dims);
             let img = glium::texture::Texture2d::new(&display, raw_image).unwrap();
             rawid = Some(image_map.insert(img));
             currsize = size;

@@ -6,19 +6,16 @@ use conrod::backend::glium::glium::glutin::{Event, ElementState, VirtualKeyCode}
 use std::env;
 extern crate crossbeam;
 extern crate image;
+extern crate rusttype;
 
 mod cache;
 mod logo;
 mod event;
 
 fn main() {
-  let args: Vec<_> = env::args().collect();
-  if args.len() != 2 {
-    println!("Usage: {} <file>", args[0]);
-    std::process::exit(2);
-  }
-  let file = &args[1];
-  println!("Loading file \"{}\"", file);
+  let mut file: Option<String> = None;
+  let currdir = env::current_dir().unwrap();
+  let directory = currdir.as_path();
 
   const WIDTH: u32 = 1200;
   const HEIGHT: u32 = 800;
@@ -33,19 +30,23 @@ fn main() {
 
   let mut ui = conrod::UiBuilder::new([WIDTH as f64, HEIGHT as f64]).build();
 
+  // Add a `Font` to the `Ui`'s `font::Map` from file.
+  ui.fonts.insert(load_font(include_bytes!("../fonts/NotoSans-Regular.ttf")));
+
   // A type used for converting `conrod::render::Primitives` into `Command`s that can be used
   // for drawing to the glium `Surface`.
   let mut renderer = conrod::backend::glium::Renderer::new(&display).unwrap();
 
   // The `WidgetId` for our background and `Image` widgets.
-  widget_ids!(struct Ids { background, imgcanvas, setcanvas, raw_image, chimper });
+  widget_ids!(struct Ids { background, imgcanvas, setcanvas, settop, setcont, raw_image, chimper, filenav });
   let ids = Ids::new(ui.widget_id_generator());
 
   let mut image_map = conrod::image::Map::new();
   let logoid = image_map.insert(load_image(logo::random(), &display));
   let mut rawid: Option<conrod::image::Id> = None;
 
-  let mut currsize = 1000 as usize; // Initially set the image size to an impossible size
+  let mut currsize = 0 as usize;
+  let mut changed_image = true;
   let sidewidth = 600.0;
   let mut use_sidepane = true;
   let imagepadding = 20.0;
@@ -77,8 +78,8 @@ fn main() {
       let (width,height) = display.get_window().unwrap().get_inner_size_pixels().unwrap();
       let size = icache.smallest_size(width as usize, height as usize);
 
-      if size != currsize {
-        match icache.get(&file, size, scope, &context) {
+      if (size != currsize || changed_image == true) && file.is_some() {
+        match icache.get(file.clone().unwrap(), size, scope, &context) {
           None => {},
           Some(imgbuf) => {
             let dims = (imgbuf.width as u32, imgbuf.height as u32);
@@ -92,6 +93,7 @@ fn main() {
             let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(img, dims);
             let img = glium::texture::Texture2d::new(&display, raw_image).unwrap();
             rawid = Some(image_map.insert(img));
+            changed_image = false;
             currsize = size;
           },
         }
@@ -103,8 +105,11 @@ fn main() {
 
         // Construct our main `Canvas` tree.
         widget::Canvas::new().flow_right(&[
-            (ids.imgcanvas, widget::Canvas::new().color(color::CHARCOAL).border(0.0)),
-            (ids.setcanvas, widget::Canvas::new().color(color::GREY).length(sidewidth).border(0.0)),
+          (ids.imgcanvas, widget::Canvas::new().color(color::CHARCOAL).border(0.0)),
+          (ids.setcanvas, widget::Canvas::new().length(sidewidth).border(0.0).flow_down(&[
+            (ids.settop, widget::Canvas::new().color(color::GREY).length(100.0).border(0.0)),
+            (ids.setcont, widget::Canvas::new().color(color::GREY).border(0.0)),
+          ])),
         ]).border(0.0).set(ids.background, ui);
 
         if let Some(rawid) = rawid {
@@ -133,8 +138,31 @@ fn main() {
         if sidewidth > 0.0 {
           widget::Image::new(logoid)
             .w_h(78.0, 88.0)
-            .top_right_with_margin_on(ids.setcanvas, 6.0)
+            .top_right_with_margin_on(ids.settop, 6.0)
             .set(ids.chimper, ui);
+        }
+
+        for event in widget::FileNavigator::all(&directory)
+          .color(conrod::color::LIGHT_BLUE)
+          .font_size(16)
+          .kid_area_wh_of(ids.setcont)
+          .middle_of(ids.setcont)
+          //.show_hidden_files(true)  // Use this to show hidden files
+          .set(ids.filenav, ui)
+        {
+          match event {
+            conrod::widget::file_navigator::Event::ChangeSelection(pbuf) => {
+              if pbuf.len() > 0 {
+                let path = pbuf[0].as_path();
+                if path.is_file() {
+                  println!("Loading file {:?}", path);
+                  file = Some(path.to_str().unwrap().to_string());
+                  changed_image = true;
+                }
+              }
+            },
+            _ => {},
+          }
         }
       }
 
@@ -156,4 +184,8 @@ fn load_image(buf: &[u8], display: &glium::Display) -> glium::texture::Texture2d
   let dims = img.dimensions();
   let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(img.into_raw(), dims);
   glium::texture::Texture2d::new(display, raw_image).unwrap()
+}
+
+fn load_font(buf: &[u8]) -> rusttype::Font {
+  rusttype::FontCollection::from_bytes(buf).into_font().unwrap()
 }

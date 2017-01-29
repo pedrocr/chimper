@@ -37,27 +37,26 @@ impl ImageCache {
     return SIZES.len() - 1
   }
 
-  pub fn get<'a>(&'a self, path: &'a str, size: usize, scope: &crossbeam::Scope<'a>, ui: &'a UIContext) -> Option<Arc<rawloader::RGBImage>> {
+  pub fn get<'a>(&'a self, path: String, size: usize, scope: &crossbeam::Scope<'a>, ui: &'a UIContext) -> Option<Arc<rawloader::RGBImage>> {
     if let Some(img) = self.images.read().unwrap().get(&(path.to_string(), size)) {
       // We found at least an empty guard value, return that cloned to activate Arc
       return img.clone()
     }
 
     // Write a None to avoid any reissues of the same thread
-    self.images.write().unwrap().insert((path.to_string(), size), None);
+    self.images.write().unwrap().insert((path.clone(), size), None);
     self.load_raw(path, size, scope, ui);
     None
   }
 
-  fn load_raw<'a>(&'a self, path: &'a str, size: usize, scope: &crossbeam::Scope<'a>, ui: &'a UIContext) {
-    let file = path.to_string();
+  fn load_raw<'a>(&'a self, path: String, size: usize, scope: &crossbeam::Scope<'a>, ui: &'a UIContext) {
     let maxwidth = SIZES[size][0];
     let maxheight = SIZES[size][1];
     let images = &self.images;
 
     scope.spawn(move || {
-      let decoded = rawloader::decode(path).unwrap().to_linear_rgb(maxwidth, maxheight).unwrap();
-      images.write().unwrap().insert((file, size), Some(Arc::new(decoded)));
+      let decoded = rawloader::decode(&path).unwrap().to_linear_rgb(maxwidth, maxheight).unwrap();
+      images.write().unwrap().insert((path, size), Some(Arc::new(decoded)));
       ui.needs_update();
     });
   }

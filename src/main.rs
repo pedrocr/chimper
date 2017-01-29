@@ -79,9 +79,10 @@ fn main() {
       let size = icache.smallest_size(width as usize, height as usize);
 
       if (size != currsize || changed_image == true) && file.is_some() {
-        match icache.get(file.clone().unwrap(), size, scope, &context) {
+        let image = icache.get(file.clone().unwrap(), size, scope, &context);
+        match *(image) {
           None => {},
-          Some(imgbuf) => {
+          Some(ref imgbuf) => {
             let dims = (imgbuf.width as u32, imgbuf.height as u32);
             // FIXME:: We should be able to just pass (*imgbuf).data.clone() to glium
             //         but it's currently crashing on those. Bug submitted:

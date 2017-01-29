@@ -9,6 +9,7 @@ image = "0.12.2"
 rand = "0.3.15"
 crossbeam = "0.2.10"
 rusttype = "0.2.1"
+multicache = "0.1.0"
 
 [dependencies.conrod]
 version = "0.50.0"

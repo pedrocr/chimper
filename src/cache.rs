@@ -1,9 +1,9 @@
 extern crate crossbeam;
 extern crate image;
 extern crate rawloader;
-use std::sync::RwLock;
+extern crate multicache;
+use self::multicache::MultiCache;
 use std::sync::Arc;
-use std::collections::HashMap;
 
 use event::UIContext;
 
@@ -18,13 +18,13 @@ const SIZES: [[usize;2];7] = [
 ];
 
 pub struct ImageCache {
-  images: RwLock<HashMap<(String, usize), Option<Arc<rawloader::RGBImage>>>>,
+  images: MultiCache<(String, usize), Option<rawloader::RGBImage>>,
 }
 
 impl ImageCache {
   pub fn new() -> ImageCache {
     ImageCache {
-      images: RwLock::new(HashMap::new()),
+      images: MultiCache::new(100000000),
     }
   }
 
@@ -37,26 +37,26 @@ impl ImageCache {
     return SIZES.len() - 1
   }
 
-  pub fn get<'a>(&'a self, path: String, size: usize, scope: &crossbeam::Scope<'a>, ui: &'a UIContext) -> Option<Arc<rawloader::RGBImage>> {
-    if let Some(img) = self.images.read().unwrap().get(&(path.to_string(), size)) {
+  pub fn get<'a>(&'a self, path: String, size: usize, scope: &crossbeam::Scope<'a>, ui: &'a UIContext) -> Arc<Option<rawloader::RGBImage>> {
+    if let Some(img) = self.images.get((path.clone(), size)) {
       // We found at least an empty guard value, return that cloned to activate Arc
-      return img.clone()
+      img.clone()
+    } else {
+      // Write a None to avoid any reissues of the same thread
+      self.images.put((path.clone(), size), None, 0);
+      self.load_raw(path, size, scope, ui);
+      Arc::new(None)
     }
-
-    // Write a None to avoid any reissues of the same thread
-    self.images.write().unwrap().insert((path.clone(), size), None);
-    self.load_raw(path, size, scope, ui);
-    None
   }
 
   fn load_raw<'a>(&'a self, path: String, size: usize, scope: &crossbeam::Scope<'a>, ui: &'a UIContext) {
     let maxwidth = SIZES[size][0];
     let maxheight = SIZES[size][1];
-    let images = &self.images;
 
     scope.spawn(move || {
       let decoded = rawloader::decode(&path).unwrap().to_linear_rgb(maxwidth, maxheight).unwrap();
-      images.write().unwrap().insert((path, size), Some(Arc::new(decoded)));
+      let imgsize = decoded.width*decoded.height*3*4;
+      self.images.put((path.clone(), size), Some(decoded), imgsize);
       ui.needs_update();
     });
   }

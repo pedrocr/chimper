@@ -164,6 +164,7 @@ fn main() {
             },
             _ => {},
           }
+          context.needs_update();
         }
       }
 

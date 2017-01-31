@@ -84,15 +84,13 @@ fn main() {
           None => {},
           Some(ref imgbuf) => {
             let dims = (imgbuf.width as u32, imgbuf.height as u32);
-            // FIXME:: We should be able to just pass (*imgbuf).data.clone() to glium
-            //         but it's currently crashing on those. Bug submitted:
-            //         https://github.com/tomaka/glium/issues/1566
-            let mut img = vec![0 as u8; imgbuf.data.len()];
-            for (o, i) in img.chunks_mut(1).zip(imgbuf.data.chunks(1)) {
-              o[0] = (i[0]*255.0).max(0.0).min(255.0) as u8;
-            }
-            let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(img, dims);
-            let img = glium::texture::Texture2d::new(&display, raw_image).unwrap();
+            let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(&imgbuf.data, dims);
+            let img = glium::texture::Texture2d::with_format(
+              &display,
+              raw_image,
+              glium::texture::UncompressedFloatFormat::U16U16U16,
+              glium::texture::MipmapsOption::NoMipmap
+            ).unwrap();
             if let Some(id) = rawid {
               image_map.replace(id, img);
             } else {
@@ -188,7 +186,7 @@ fn main() {
 fn load_image(buf: &[u8], display: &glium::Display) -> glium::texture::Texture2d {
   let img = image::load_from_memory(buf).unwrap().to_rgba();
   let dims = img.dimensions();
-  let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(img.into_raw(), dims);
+  let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(&img.into_raw(), dims);
   glium::texture::Texture2d::new(display, raw_image).unwrap()
 }
 

@@ -19,11 +19,14 @@ fn main() {
 
   const WIDTH: u32 = 1200;
   const HEIGHT: u32 = 800;
+  let mut fullscreen = false;
 
   // Build the window.
   let display = glium::glutin::WindowBuilder::new()
     .with_vsync()
     .with_dimensions(WIDTH, HEIGHT)
+    .with_maximized(true)
+    .with_fullscreen_windowed(fullscreen)
     .with_title("Chimper")
     .build_glium()
     .unwrap();
@@ -70,6 +73,10 @@ fn main() {
           },
           Event::KeyboardInput(ElementState::Pressed, _, Some(VirtualKeyCode::Tab)) => {
             use_sidepane = !use_sidepane;
+          },
+          Event::KeyboardInput(ElementState::Pressed, _, Some(VirtualKeyCode::F11)) => {
+            fullscreen = !fullscreen;
+            display.get_window().unwrap().set_fullscreen_windowed(fullscreen)
           },
           _ => {},
         }

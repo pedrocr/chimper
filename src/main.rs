@@ -93,7 +93,11 @@ fn main() {
             }
             let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(img, dims);
             let img = glium::texture::Texture2d::new(&display, raw_image).unwrap();
-            rawid = Some(image_map.insert(img));
+            if let Some(id) = rawid {
+              image_map.replace(id, img);
+            } else {
+              rawid = Some(image_map.insert(img));
+            }
             changed_image = false;
             currsize = size;
           },

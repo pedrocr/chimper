@@ -12,7 +12,7 @@ rusttype = "0.2.1"
 multicache = "0.1.1"
 
 [dependencies.conrod]
-version = "0.50.0"
+version = "0.51.0"
 features = ["glium", "winit"]
 
 [profile.release]

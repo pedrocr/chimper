@@ -92,10 +92,10 @@ fn main() {
           Some(ref imgbuf) => {
             let dims = (imgbuf.width as u32, imgbuf.height as u32);
             let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(&imgbuf.data, dims);
-            let img = glium::texture::Texture2d::with_format(
+            let img = glium::texture::SrgbTexture2d::with_format(
               &display,
               raw_image,
-              glium::texture::UncompressedFloatFormat::U16U16U16,
+              glium::texture::SrgbFormat::U8U8U8,
               glium::texture::MipmapsOption::NoMipmap
             ).unwrap();
             if let Some(id) = rawid {
@@ -190,11 +190,11 @@ fn main() {
 }
 
 // Load the image from a file
-fn load_image(buf: &[u8], display: &glium::Display) -> glium::texture::Texture2d {
+fn load_image(buf: &[u8], display: &glium::Display) -> glium::texture::SrgbTexture2d {
   let img = image::load_from_memory(buf).unwrap().to_rgba();
   let dims = img.dimensions();
   let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(&img.into_raw(), dims);
-  glium::texture::Texture2d::new(display, raw_image).unwrap()
+  glium::texture::SrgbTexture2d::new(display, raw_image).unwrap()
 }
 
 fn load_font(buf: &[u8]) -> rusttype::Font {

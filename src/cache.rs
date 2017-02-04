@@ -4,6 +4,8 @@ extern crate rawloader;
 extern crate multicache;
 use self::multicache::MultiCache;
 use std::sync::Arc;
+use std::path::Path;
+use self::rawloader::SRGBImage;
 
 use event::UIContext;
 
@@ -18,7 +20,7 @@ const SIZES: [[usize;2];7] = [
 ];
 
 pub struct ImageCache {
-  images: MultiCache<(String, usize), Option<rawloader::SRGBImage>>,
+  images: MultiCache<(String, usize), Option<SRGBImage>>,
 }
 
 impl ImageCache {
@@ -37,7 +39,7 @@ impl ImageCache {
     return SIZES.len() - 1
   }
 
-  pub fn get<'a>(&'a self, path: String, size: usize, scope: &crossbeam::Scope<'a>, ui: &'a UIContext) -> Arc<Option<rawloader::SRGBImage>> {
+  pub fn get<'a>(&'a self, path: String, size: usize, scope: &crossbeam::Scope<'a>, ui: &'a UIContext) -> Arc<Option<SRGBImage>> {
     if let Some(img) = self.images.get((path.clone(), size)) {
       // We found at least an empty guard value, return that cloned to activate Arc
       img.clone()
@@ -54,7 +56,26 @@ impl ImageCache {
     let maxheight = SIZES[size][1];
 
     scope.spawn(move || {
-      let decoded = rawloader::decode(&path).unwrap().to_srgb(maxwidth, maxheight).unwrap();
+      let decoded = match rawloader::decode(&path) {
+        Ok(img) => img.to_srgb(maxwidth, maxheight).unwrap(),
+        // If we couldn't load it as a raw try with the normal image loading
+        Err(_) => match image::open(&Path::new(&path)) {
+          Ok(img) => {
+            let rgb = img.to_rgb();
+            let width = rgb.width() as usize;
+            let height = rgb.height() as usize;
+            SRGBImage {
+              data: rgb.into_raw(),
+              width: width,
+              height: height,
+            }
+          }
+          Err(_) => {
+            println!("Don't know how to load \"{}\"", path);
+            return
+          }
+        },
+      };
       let imgsize = decoded.width*decoded.height*3;
       self.images.put((path.clone(), size), Some(decoded), imgsize);
       ui.needs_update();

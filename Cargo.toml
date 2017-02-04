@@ -15,6 +15,11 @@ multicache = "0.1.1"
 version = "0.51.0"
 features = ["glium", "winit"]
 
+[replace]
+"glium:0.16.0"  = { git = 'https://github.com/pedrocr/glium.git', branch='fix-from-raw-rgb'}
+"winit:0.5.10"  = { git = 'https://github.com/pedrocr/winit.git', branch='maximization' }
+"glutin:0.7.4" = { git = 'https://github.com/pedrocr/glutin.git', branch='maximization' }
+
 [profile.release]
 panic = "unwind"
 

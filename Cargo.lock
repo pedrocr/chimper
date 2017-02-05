@@ -337,7 +337,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "glutin"
 version = "0.7.4"
-source = "git+https://github.com/pedrocr/glutin.git?branch=maximization#6b7fa637e923a5b5a774431dbd8f34f48c235b8c"
+source = "git+https://github.com/pedrocr/glutin.git?branch=maximization#b877f8113a3c5d8740468e30f31d9c08efd379e5"
 dependencies = [
  "android_glue 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "cgl 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -925,7 +925,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "winit"
 version = "0.5.10"
-source = "git+https://github.com/pedrocr/winit.git?branch=maximization#3423e9644dbed5d39d20ae83e3ef742c61c6fc4f"
+source = "git+https://github.com/pedrocr/winit.git?branch=maximization#cbd42d7dc9152d63c23b81419c6c584a68375735"
 dependencies = [
  "android_glue 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "cgl 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",

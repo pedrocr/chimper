@@ -85,7 +85,7 @@ fn main() {
       let (width,height) = display.get_window().unwrap().get_inner_size_pixels().unwrap();
       let size = icache.smallest_size(width as usize, height as usize);
 
-      if (size != currsize || changed_image == true) && file.is_some() {
+      if (size != currsize || changed_image) && file.is_some() {
         let image = icache.get(file.clone().unwrap(), size, scope, &context);
         match *(image) {
           None => {},
@@ -105,6 +105,7 @@ fn main() {
             }
             changed_image = false;
             currsize = size;
+            ui.needs_redraw();
           },
         }
       }

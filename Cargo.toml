@@ -12,8 +12,10 @@ rusttype = "0.2.1"
 multicache = "0.1.1"
 
 [dependencies.conrod]
-version = "0.51.0"
+version = "0.51.1"
 features = ["glium", "winit"]
+git = 'https://github.com/pedrocr/conrod.git'
+branch = 'sorted-file-navigator'
 
 [replace]
 "glium:0.16.0"  = { git = 'https://github.com/pedrocr/glium.git', branch='fix-from-raw-rgb'}

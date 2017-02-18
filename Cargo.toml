@@ -19,6 +19,7 @@ features = ["glium", "winit"]
 "glium:0.16.0"  = { git = 'https://github.com/pedrocr/glium.git', branch='fix-from-raw-rgb'}
 "winit:0.5.10"  = { git = 'https://github.com/pedrocr/winit.git', branch='maximization' }
 "glutin:0.7.4" = { git = 'https://github.com/pedrocr/glutin.git', branch='maximization' }
+"image:0.12.2" = { git = 'https://github.com/pedrocr/image.git', branch='ppm-decoder' }
 
 [profile.release]
 panic = "unwind"

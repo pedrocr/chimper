@@ -19,14 +19,14 @@ fn main() {
 
   const WIDTH: u32 = 1200;
   const HEIGHT: u32 = 800;
-  let mut fullscreen = false;
+  //let mut fullscreen = false;
 
   // Build the window.
   let display = glium::glutin::WindowBuilder::new()
     .with_vsync()
     .with_dimensions(WIDTH, HEIGHT)
-    .with_maximized(true)
-    .with_fullscreen_windowed(fullscreen)
+    //.with_maximized(true)
+    //.with_fullscreen_windowed(fullscreen)
     .with_title("Chimper")
     .build_glium()
     .unwrap();
@@ -41,7 +41,7 @@ fn main() {
   let mut renderer = conrod::backend::glium::Renderer::new(&display).unwrap();
 
   // The `WidgetId` for our background and `Image` widgets.
-  widget_ids!(struct Ids { background, imgcanvas, setcanvas, settop, setcont, raw_image, chimper, filenav });
+  widget_ids!(struct Ids { background, imgcanvas, dragcanvas, setcanvas, settop, setcont, raw_image, chimper, filenav });
   let ids = Ids::new(ui.widget_id_generator());
 
   let mut image_map = conrod::image::Map::new();
@@ -50,6 +50,7 @@ fn main() {
 
   let mut currsize = 0 as usize;
   let mut changed_image = true;
+  let dragwidth = 10.0;
   let sidewidth = 600.0;
   let mut use_sidepane = true;
   let imagepadding = 20.0;
@@ -74,10 +75,10 @@ fn main() {
           Event::KeyboardInput(ElementState::Pressed, _, Some(VirtualKeyCode::Tab)) => {
             use_sidepane = !use_sidepane;
           },
-          Event::KeyboardInput(ElementState::Pressed, _, Some(VirtualKeyCode::F11)) => {
-            fullscreen = !fullscreen;
-            display.get_window().unwrap().set_fullscreen_windowed(fullscreen)
-          },
+//          Event::KeyboardInput(ElementState::Pressed, _, Some(VirtualKeyCode::F11)) => {
+//            fullscreen = !fullscreen;
+//            display.get_window().unwrap().set_fullscreen_windowed(fullscreen)
+//          },
           _ => {},
         }
       }
@@ -117,6 +118,7 @@ fn main() {
         // Construct our main `Canvas` tree.
         widget::Canvas::new().flow_right(&[
           (ids.imgcanvas, widget::Canvas::new().color(color::CHARCOAL).border(0.0)),
+          (ids.dragcanvas, widget::Canvas::new().length(dragwidth).color(color::BLACK).border(0.0)),
           (ids.setcanvas, widget::Canvas::new().length(sidewidth).border(0.0).flow_down(&[
             (ids.settop, widget::Canvas::new().color(color::GREY).length(100.0).border(0.0)),
             (ids.setcont, widget::Canvas::new().color(color::GREY).border(0.0)),
@@ -161,6 +163,7 @@ fn main() {
           //.show_hidden_files(true)  // Use this to show hidden files
           .set(ids.filenav, ui)
         {
+          println!("Caught event {:?}", event);
           match event {
             conrod::widget::file_navigator::Event::ChangeSelection(pbuf) => {
               if pbuf.len() > 0 {

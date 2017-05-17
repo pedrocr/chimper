@@ -1,0 +1,20 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+matrix:
+  allow_failures:
+    - rust: nightly
+notifications:
+  email:
+    recipients:
+      - pedro@pedrocr.net
+    on_success: never
+    on_failure: always
+  irc:
+    channels:
+      - "irc.mozilla.org#chimper"
+    on_success: always
+    on_failure: always
+    skip_join: true

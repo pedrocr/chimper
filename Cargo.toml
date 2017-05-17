@@ -2,6 +2,11 @@
 name = "chimper"
 version = "0.1.0"
 authors = ["Pedro Côrte-Real <pedro@pedrocr.net>"]
+description = "A graphical image viewer"
+#homepage = "..."
+repository = "https://github.com/pedrocr/chimper"
+license = "GPL-2.1"
+categories = ["multimedia::images"]
 
 [dependencies]
 rawloader = "0.31.0"

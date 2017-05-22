@@ -118,7 +118,7 @@ fn main() {
         // Construct our main `Canvas` tree.
         widget::Canvas::new().flow_right(&[
           (ids.imgcanvas, widget::Canvas::new().color(color::CHARCOAL).border(0.0).flow_down(&[
-            (ids.settop2, widget::Canvas::new().color(color::BLUE).border(0.0)),
+            (ids.settop2, widget::Canvas::new().color(color::CHARCOAL).border(0.0)),
             (ids.setcont2, widget::Canvas::new().color(color::GREEN).length(100.0).border(0.0)),
           ])),
           (ids.dragcanvas, widget::Canvas::new().length(dragwidth).color(color::BLACK).border(0.0)),

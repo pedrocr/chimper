@@ -133,8 +133,8 @@ fn main() {
             Some(img) => {
               let (maxw, maxh) = img.dimensions();
               let scale = (maxw as f64)/(maxh as f64);
-              width = (width-sidewidth-imagepadding).min(maxw as f64);
-              height = (height-imagepadding).min(maxh as f64);
+              width = (ui.w_of(ids.imgcanvas).unwrap() - imagepadding).min(maxw as f64);
+              height = (ui.h_of(ids.imgcanvas).unwrap() - imagepadding).min(maxh as f64);
               if width/height > scale {
                 width = height * scale;
               } else {

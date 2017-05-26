@@ -1,5 +1,5 @@
 #[macro_use] extern crate conrod;
-use conrod::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, color};
+use conrod::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, color, Scalar};
 use conrod::backend::glium::glium;
 use conrod::backend::glium::glium::{DisplayBuild, Surface};
 use conrod::backend::glium::glium::glutin::{Event, ElementState, VirtualKeyCode};
@@ -41,7 +41,7 @@ fn main() {
   let mut renderer = conrod::backend::glium::Renderer::new(&display).unwrap();
 
   // The `WidgetId` for our background and `Image` widgets.
-  widget_ids!(struct Ids { background, imgcanvas, dragcanvas, setcanvas, settop, setcont, raw_image, chimper, filenav });
+  widget_ids!(struct Ids { background, imgcanvas, dragcanvas, setcanvas, settop, setcont, settop2, setcont2, left_text, raw_image, chimper, filenav });
   let ids = Ids::new(ui.widget_id_generator());
 
   let mut image_map = conrod::image::Map::new();
@@ -117,7 +117,10 @@ fn main() {
 
         // Construct our main `Canvas` tree.
         widget::Canvas::new().flow_right(&[
-          (ids.imgcanvas, widget::Canvas::new().color(color::CHARCOAL).border(0.0)),
+          (ids.imgcanvas, widget::Canvas::new().color(color::CHARCOAL).border(0.0).flow_down(&[
+            (ids.settop2, widget::Canvas::new().color(color::CHARCOAL).border(0.0)),
+            (ids.setcont2, widget::Canvas::new().color(color::GREY).length(100.0).border(0.0)),
+          ])),
           (ids.dragcanvas, widget::Canvas::new().length(dragwidth).color(color::BLACK).border(0.0)),
           (ids.setcanvas, widget::Canvas::new().length(sidewidth).border(0.0).flow_down(&[
             (ids.settop, widget::Canvas::new().color(color::GREY).length(100.0).border(0.0)),
@@ -143,6 +146,16 @@ fn main() {
             },
           }
 
+          let parent_height = ui.rect_of(ids.settop2).unwrap().h();
+          if height > parent_height {
+              height = parent_height;
+          }
+          
+          widget::Image::new(rawid)
+            .w_h(width, height)
+            .middle_of(ids.settop2)
+            .set(ids.raw_image, ui);
+          }
           widget::Image::new(rawid)
             .w_h(width, height)
             .middle_of(ids.imgcanvas)
@@ -153,6 +166,18 @@ fn main() {
             .w_h(78.0, 88.0)
             .top_right_with_margin_on(ids.settop, 6.0)
             .set(ids.chimper, ui);
+        }
+
+        const PAD: Scalar = 20.0;
+
+        if let Some(ref f) = file {
+            widget::Text::new(f.as_str())
+            .color(color::LIGHT_RED)
+            .padded_w_of(ids.setcont2, PAD)
+            .mid_top_with_margin_on(ids.setcont2, PAD)
+            .left_justify()
+            .line_spacing(10.0)
+            .set(ids.left_text, ui);
         }
 
         for event in widget::FileNavigator::all(&directory)

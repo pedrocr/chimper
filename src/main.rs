@@ -146,6 +146,16 @@ fn main() {
             },
           }
 
+          let parent_height = ui.rect_of(ids.settop2).unwrap().h();
+          if height > parent_height {
+              height = parent_height;
+          }
+          
+          widget::Image::new(rawid)
+            .w_h(width, height)
+            .middle_of(ids.settop2)
+            .set(ids.raw_image, ui);
+          }
           widget::Image::new(rawid)
             .w_h(width, height)
             .middle_of(ids.imgcanvas)

@@ -162,7 +162,8 @@ fn main() {
 
         if let Some(ref f) = file {
             widget::Text::new(f.as_str())
-            .color(color::LIGHT_RED)
+            .color(color::WHITE)
+            .font_size(18)
             .padded_w_of(ids.footer, PAD)
             .mid_top_with_margin_on(ids.footer, PAD)
             .left_justify()

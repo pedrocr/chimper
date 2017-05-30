@@ -3,6 +3,7 @@ use conrod::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, colo
 use conrod::backend::glium::glium;
 use conrod::backend::glium::glium::{DisplayBuild, Surface};
 use conrod::backend::glium::glium::glutin::{Event, ElementState, VirtualKeyCode};
+use std::path::Path;
 use std::env;
 extern crate crossbeam;
 extern crate image;
@@ -161,7 +162,8 @@ fn main() {
         const PAD: Scalar = 20.0;
 
         if let Some(ref f) = file {
-            widget::Text::new(f.as_str())
+            let file_name = Path::new(f).file_name().unwrap();
+            widget::Text::new(file_name.to_str().unwrap())
             .color(color::WHITE)
             .font_size(18)
             .padded_w_of(ids.footer, PAD)

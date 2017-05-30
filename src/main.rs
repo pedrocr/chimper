@@ -120,7 +120,7 @@ fn main() {
         widget::Canvas::new().flow_right(&[
           (ids.leftarea, widget::Canvas::new().color(color::CHARCOAL).border(0.0).flow_down(&[
               (ids.imgcanvas, widget::Canvas::new().color(color::GREY).border(0.0)),
-              (ids.footer, widget::Canvas::new().color(color::CHARCOAL).length(100.0).border(0.0)),
+              (ids.footer, widget::Canvas::new().color(color::CHARCOAL).length(75.0).border(0.0)),
               ])),
           (ids.dragcanvas, widget::Canvas::new().length(dragwidth).color(color::BLACK).border(0.0)),
           (ids.setcanvas, widget::Canvas::new().length(sidewidth).border(0.0).flow_down(&[

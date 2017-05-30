@@ -164,11 +164,11 @@ fn main() {
         if let Some(ref f) = file {
             let file_name = Path::new(f).file_name().unwrap();
             widget::Text::new(file_name.to_str().unwrap())
-            .color(color::WHITE)
+            .color( color::WHITE)
             .font_size(18)
             .padded_w_of(ids.footer, PAD)
             .mid_top_with_margin_on(ids.footer, PAD)
-            .left_justify()
+            .center_justify()
             .line_spacing(10.0)
             .set(ids.lefttext, ui);
 }

@@ -1,8 +1,10 @@
 #[macro_use] extern crate conrod;
-use conrod::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, color};
+use conrod::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, color, Scalar};
 use conrod::backend::glium::glium;
 use conrod::backend::glium::glium::{DisplayBuild, Surface};
 use conrod::backend::glium::glium::glutin::{Event, ElementState, VirtualKeyCode};
+use std::ffi::OsString;
+use std::path::Path;
 use std::env;
 extern crate crossbeam;
 extern crate image;
@@ -13,9 +15,10 @@ mod logo;
 mod event;
 
 fn main() {
+    println!("{:?}", "testing" );
   let mut file: Option<String> = None;
   let currdir = env::current_dir().unwrap();
-  let directory = currdir.as_path();
+  let mut directory = currdir.as_path().to_owned();
 
   const WIDTH: u32 = 1200;
   const HEIGHT: u32 = 800;
@@ -41,7 +44,7 @@ fn main() {
   let mut renderer = conrod::backend::glium::Renderer::new(&display).unwrap();
 
   // The `WidgetId` for our background and `Image` widgets.
-  widget_ids!(struct Ids { background, imgcanvas, dragcanvas, setcanvas, settop, setcont, raw_image, chimper, filenav });
+  widget_ids!(struct Ids { background, imgcanvas, dragcanvas, leftarea, lefttext, footer,setcanvas, settop, setcont, raw_image, chimper, filenav });
   let ids = Ids::new(ui.widget_id_generator());
 
   let mut image_map = conrod::image::Map::new();
@@ -74,6 +77,22 @@ fn main() {
           },
           Event::KeyboardInput(ElementState::Pressed, _, Some(VirtualKeyCode::Tab)) => {
             use_sidepane = !use_sidepane;
+          },
+          Event::KeyboardInput(ElementState::Pressed, _, Some(VirtualKeyCode::H)) => {
+              let home_dir = env::home_dir().unwrap().as_path().to_owned();
+              directory = home_dir.as_path().to_owned();
+          },
+          Event::KeyboardInput(ElementState::Pressed, _, Some(VirtualKeyCode::Back)) => {
+              let mut pathbuf = directory.to_path_buf();
+              let pathbuf_dir = pathbuf.parent().unwrap();
+              //pathbuf_dir.returntype;
+              let print = pathbuf_dir.to_owned().into_os_string();
+
+              let OS_String: OsString = "/".to_string().into();
+              println!("{:?}", print);
+              if print != OS_String {
+                directory = pathbuf_dir.to_owned();
+              }
           },
 //          Event::KeyboardInput(ElementState::Pressed, _, Some(VirtualKeyCode::F11)) => {
 //            fullscreen = !fullscreen;
@@ -117,7 +136,10 @@ fn main() {
 
         // Construct our main `Canvas` tree.
         widget::Canvas::new().flow_right(&[
-          (ids.imgcanvas, widget::Canvas::new().color(color::CHARCOAL).border(0.0)),
+          (ids.leftarea, widget::Canvas::new().color(color::CHARCOAL).border(0.0).flow_down(&[
+              (ids.imgcanvas, widget::Canvas::new().color(color::GREY).border(0.0)),
+              (ids.footer, widget::Canvas::new().color(color::CHARCOAL).length(75.0).border(0.0)),
+              ])),
           (ids.dragcanvas, widget::Canvas::new().length(dragwidth).color(color::BLACK).border(0.0)),
           (ids.setcanvas, widget::Canvas::new().length(sidewidth).border(0.0).flow_down(&[
             (ids.settop, widget::Canvas::new().color(color::GREY).length(100.0).border(0.0)),
@@ -154,6 +176,22 @@ fn main() {
             .top_right_with_margin_on(ids.settop, 6.0)
             .set(ids.chimper, ui);
         }
+
+        const PAD: Scalar = 20.0;
+
+        if let Some(ref f) = file {
+            let file_name = Path::new(f).file_name().unwrap();
+
+            let text_output = format!("{}{}{}{}{}", file_name.to_str().unwrap(), " Width= " , width, " height= ", height);
+            widget::Text::new(text_output.as_str())
+            .color(color::WHITE)
+            .font_size(18)
+            .padded_w_of(ids.footer, PAD)
+            .mid_top_with_margin_on(ids.footer, PAD)
+            .center_justify()
+            .line_spacing(10.0)
+            .set(ids.lefttext, ui);
+}
 
         for event in widget::FileNavigator::all(&directory)
           .color(conrod::color::LIGHT_BLUE)

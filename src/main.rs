@@ -3,6 +3,7 @@ use conrod::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, colo
 use conrod::backend::glium::glium;
 use conrod::backend::glium::glium::{DisplayBuild, Surface};
 use conrod::backend::glium::glium::glutin::{Event, ElementState, VirtualKeyCode};
+use std::ffi::OsString;
 use std::path::Path;
 use std::env;
 extern crate crossbeam;
@@ -14,9 +15,10 @@ mod logo;
 mod event;
 
 fn main() {
+    println!("{:?}", "testing" );
   let mut file: Option<String> = None;
   let currdir = env::current_dir().unwrap();
-  let directory = currdir.as_path();
+  let mut directory = currdir.as_path().to_owned();
 
   const WIDTH: u32 = 1200;
   const HEIGHT: u32 = 800;
@@ -75,6 +77,22 @@ fn main() {
           },
           Event::KeyboardInput(ElementState::Pressed, _, Some(VirtualKeyCode::Tab)) => {
             use_sidepane = !use_sidepane;
+          },
+          Event::KeyboardInput(ElementState::Pressed, _, Some(VirtualKeyCode::H)) => {
+              let home_dir = env::home_dir().unwrap().as_path().to_owned();
+              directory = home_dir.as_path().to_owned();
+          },
+          Event::KeyboardInput(ElementState::Pressed, _, Some(VirtualKeyCode::Back)) => {
+              let mut pathbuf = directory.to_path_buf();
+              let pathbuf_dir = pathbuf.parent().unwrap();
+              //pathbuf_dir.returntype;
+              let print = pathbuf_dir.to_owned().into_os_string();
+
+              let OS_String: OsString = "/".to_string().into();
+              println!("{:?}", print);
+              if print != OS_String {
+                directory = pathbuf_dir.to_owned();
+              }
           },
 //          Event::KeyboardInput(ElementState::Pressed, _, Some(VirtualKeyCode::F11)) => {
 //            fullscreen = !fullscreen;
@@ -163,8 +181,10 @@ fn main() {
 
         if let Some(ref f) = file {
             let file_name = Path::new(f).file_name().unwrap();
-            widget::Text::new(file_name.to_str().unwrap())
-            .color( color::WHITE)
+
+            let text_output = format!("{}{}{}{}{}", file_name.to_str().unwrap(), " Width= " , width, " height= ", height);
+            widget::Text::new(text_output.as_str())
+            .color(color::WHITE)
             .font_size(18)
             .padded_w_of(ids.footer, PAD)
             .mid_top_with_margin_on(ids.footer, PAD)

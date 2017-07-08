@@ -9,20 +9,20 @@ license = "GPL-2.1"
 categories = ["multimedia::images"]
 
 [dependencies]
-rawloader = "0.31.0"
-image = "0.13.0"
+rawloader = "0.33.0"
+image = "0.14.0"
 rand = "0.3.15"
 crossbeam = "0.2.10"
 rusttype = "0.2.1"
-multicache = "0.1.1"
+multicache = "0.4.0"
 
 [dependencies.conrod]
-version = "0.52.0"
+version = "0.53.0"
 features = ["glium", "winit"]
 
 [replace]
 "glium:0.16.0"  = { git = 'https://github.com/tomaka/glium.git', branch='master'}
-"rawloader:0.31.0"  = { git = 'https://github.com/pedrocr/rawloader.git', branch='master'}
+#"rawloader:0.31.0"  = { git = 'https://github.com/pedrocr/rawloader.git', branch='master'}
 #"winit:0.5.10"  = { git = 'https://github.com/pedrocr/winit.git', branch='maximization' }
 #"glutin:0.7.4" = { git = 'https://github.com/pedrocr/glutin.git', branch='maximization' }
 #"image:0.12.2" = { path = '../image/' }

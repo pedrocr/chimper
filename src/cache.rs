@@ -40,7 +40,7 @@ impl ImageCache {
   }
 
   pub fn get<'a>(&'a self, path: String, size: usize, scope: &crossbeam::Scope<'a>, ui: &'a UIContext) -> Arc<Option<SRGBImage>> {
-    if let Some(img) = self.images.get((path.clone(), size)) {
+    if let Some(img) = self.images.get(&(path.clone(), size)) {
       // We found at least an empty guard value, return that cloned to activate Arc
       img.clone()
     } else {

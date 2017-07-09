@@ -81,4 +81,33 @@ impl ImageCache {
       ui.needs_update();
     });
   }
-}
+
+  pub fn get_image_dimensions<'a>(&'a self, path: String, size: usize) -> Option<(usize,usize)>{
+    let maxwidth = SIZES[size][0];
+    let maxheight = SIZES[size][1];
+
+      let decoded = match rawloader::decode(&path) {
+        Ok(img) => img.to_srgb(maxwidth, maxheight).unwrap(),
+        // If we couldn't load it as a raw try with the normal image loading
+        Err(_) => match image::open(&Path::new(&path)) {
+          Ok(img) => {
+            let rgb = img.to_rgb();
+            let width = rgb.width() as usize;
+            let height = rgb.height() as usize;
+            SRGBImage {
+              data: rgb.into_raw(),
+              width: width,
+              height: height,
+            }
+          }
+          Err(_) => {
+            println!("Don't know how to load \"{}\"", path);
+            return None
+          }
+        },
+      };
+      let imgwidth = decoded.width;
+      let imgheight = decoded.height;
+      return Some((imgwidth, imgheight));
+    }
+  }

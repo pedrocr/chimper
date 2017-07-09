@@ -162,30 +162,33 @@ fn main() {
         const PAD: Scalar = 20.0;
 
         if let Some(ref f) = file {
-            let file_name = Path::new(f).file_name().unwrap();
-            let option_dimensions: Option<(usize, usize)> = icache.get_image_dimensions(
-                file.clone().unwrap(),
-                size);
+            if let Some(file_name) = Path::new(f).file_name() {
+                if let Some(file_name_str) = file_name.to_str() {
+                    let option_dimensions: Option<(usize, usize)> = icache.get_image_dimensions(
+                        f.clone(),
+                        size);
 
-            if let Some(dimensions) = option_dimensions {
-                    let width_usize = dimensions.0;
-                    let height_usize = dimensions.1;
+                        if let Some(dimensions) = option_dimensions {
+                            let width_usize = dimensions.0;
+                            let height_usize = dimensions.1;
 
-                    let width = &width_usize.to_string();
-                    let height = &height_usize.to_string();
-                    let output = format!(
-                        "{} {}x{}", file_name.to_str().unwrap(),
-                        width,
-                        height);
+                            let width = &width_usize.to_string();
+                            let height = &height_usize.to_string();
+                            let output = format!(
+                                "{} {}x{}", file_name_str,
+                                width,
+                                height);
 
-                    widget::Text::new(&output)
-                    .color( color::WHITE)
-                    .font_size(18)
-                    .padded_w_of(ids.footer, PAD)
-                    .mid_top_with_margin_on(ids.footer, PAD)
-                    .center_justify()
-                    .line_spacing(10.0)
-                    .set(ids.lefttext, ui);
+                            widget::Text::new(&output)
+                            .color(color::WHITE)
+                            .font_size(18)
+                            .padded_w_of(ids.footer, PAD)
+                            .mid_top_with_margin_on(ids.footer, PAD)
+                            .center_justify()
+                            .line_spacing(10.0)
+                            .set(ids.lefttext, ui);
+                        }
+                }
             }
         }
 

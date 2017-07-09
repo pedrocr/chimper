@@ -1,8 +1,9 @@
 #[macro_use] extern crate conrod;
-use conrod::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, color};
+use conrod::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, color, Scalar};
 use conrod::backend::glium::glium;
 use conrod::backend::glium::glium::{DisplayBuild, Surface};
 use conrod::backend::glium::glium::glutin::{Event, ElementState, VirtualKeyCode};
+use std::path::Path;
 use std::env;
 extern crate crossbeam;
 extern crate image;
@@ -41,7 +42,7 @@ fn main() {
   let mut renderer = conrod::backend::glium::Renderer::new(&display).unwrap();
 
   // The `WidgetId` for our background and `Image` widgets.
-  widget_ids!(struct Ids { background, imgcanvas, dragcanvas, setcanvas, settop, setcont, raw_image, chimper, filenav });
+  widget_ids!(struct Ids { background, imgcanvas, dragcanvas, leftarea, lefttext, footer,setcanvas, settop, setcont, raw_image, chimper, filenav });
   let ids = Ids::new(ui.widget_id_generator());
 
   let mut image_map = conrod::image::Map::new();
@@ -117,7 +118,10 @@ fn main() {
 
         // Construct our main `Canvas` tree.
         widget::Canvas::new().flow_right(&[
-          (ids.imgcanvas, widget::Canvas::new().color(color::CHARCOAL).border(0.0)),
+          (ids.leftarea, widget::Canvas::new().color(color::CHARCOAL).border(0.0).flow_down(&[
+              (ids.imgcanvas, widget::Canvas::new().color(color::GREY).border(0.0)),
+              (ids.footer, widget::Canvas::new().color(color::CHARCOAL).length(60.0).border(0.0)),
+              ])),
           (ids.dragcanvas, widget::Canvas::new().length(dragwidth).color(color::BLACK).border(0.0)),
           (ids.setcanvas, widget::Canvas::new().length(sidewidth).border(0.0).flow_down(&[
             (ids.settop, widget::Canvas::new().color(color::GREY).length(100.0).border(0.0)),
@@ -153,6 +157,39 @@ fn main() {
             .w_h(78.0, 88.0)
             .top_right_with_margin_on(ids.settop, 6.0)
             .set(ids.chimper, ui);
+        }
+
+        const PAD: Scalar = 20.0;
+
+        if let Some(ref f) = file {
+            if let Some(file_name) = Path::new(f).file_name() {
+                if let Some(file_name_str) = file_name.to_str() {
+                    let option_dimensions: Option<(usize, usize)> = icache.get_image_dimensions(
+                        f.clone(),
+                        size);
+
+                    if let Some(dimensions) = option_dimensions {
+                        let width_usize = dimensions.0;
+                        let height_usize = dimensions.1;
+
+                        let width = &width_usize.to_string();
+                        let height = &height_usize.to_string();
+                        let output = format!(
+                            "{} {}x{}", file_name_str,
+                            width,
+                            height);
+
+                        widget::Text::new(&output)
+                        .color(color::WHITE)
+                        .font_size(18)
+                        .padded_w_of(ids.footer, PAD)
+                        .mid_top_with_margin_on(ids.footer, PAD)
+                        .center_justify()
+                        .line_spacing(10.0)
+                        .set(ids.lefttext, ui);
+                    }
+                }
+            }
         }
 
         for event in widget::FileNavigator::all(&directory)

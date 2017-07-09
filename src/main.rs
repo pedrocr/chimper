@@ -120,7 +120,7 @@ fn main() {
         widget::Canvas::new().flow_right(&[
           (ids.leftarea, widget::Canvas::new().color(color::CHARCOAL).border(0.0).flow_down(&[
               (ids.imgcanvas, widget::Canvas::new().color(color::GREY).border(0.0)),
-              (ids.footer, widget::Canvas::new().color(color::CHARCOAL).length(75.0).border(0.0)),
+              (ids.footer, widget::Canvas::new().color(color::CHARCOAL).length(60.0).border(0.0)),
               ])),
           (ids.dragcanvas, widget::Canvas::new().length(dragwidth).color(color::BLACK).border(0.0)),
           (ids.setcanvas, widget::Canvas::new().length(sidewidth).border(0.0).flow_down(&[
@@ -168,26 +168,26 @@ fn main() {
                         f.clone(),
                         size);
 
-                        if let Some(dimensions) = option_dimensions {
-                            let width_usize = dimensions.0;
-                            let height_usize = dimensions.1;
+                    if let Some(dimensions) = option_dimensions {
+                        let width_usize = dimensions.0;
+                        let height_usize = dimensions.1;
 
-                            let width = &width_usize.to_string();
-                            let height = &height_usize.to_string();
-                            let output = format!(
-                                "{} {}x{}", file_name_str,
-                                width,
-                                height);
+                        let width = &width_usize.to_string();
+                        let height = &height_usize.to_string();
+                        let output = format!(
+                            "{} {}x{}", file_name_str,
+                            width,
+                            height);
 
-                            widget::Text::new(&output)
-                            .color(color::WHITE)
-                            .font_size(18)
-                            .padded_w_of(ids.footer, PAD)
-                            .mid_top_with_margin_on(ids.footer, PAD)
-                            .center_justify()
-                            .line_spacing(10.0)
-                            .set(ids.lefttext, ui);
-                        }
+                        widget::Text::new(&output)
+                        .color(color::WHITE)
+                        .font_size(18)
+                        .padded_w_of(ids.footer, PAD)
+                        .mid_top_with_margin_on(ids.footer, PAD)
+                        .center_justify()
+                        .line_spacing(10.0)
+                        .set(ids.lefttext, ui);
+                    }
                 }
             }
         }

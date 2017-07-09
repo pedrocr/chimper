@@ -171,7 +171,6 @@ fn main() {
                     let width_usize = dimensions.0;
                     let height_usize = dimensions.1;
 
-
                     let width = &width_usize.to_string();
                     let height = &height_usize.to_string();
                     let output = format!(

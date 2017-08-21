@@ -45,6 +45,7 @@ impl<'a> Chimper<'a> {
 struct ImageMapping {
   id: Option<(String, usize)>,
   img: Option<(conrod::image::Id,u32,u32)>,
+  oldrawid: Option<conrod::image::Id>,
   alldone: bool,
 }
 
@@ -155,51 +156,51 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
 fn main() {
   let mut window = chimper::window::ChimperWindow::new("Chimper", 1200, 800);
   let logoid = window.load_texture(load_image(chimper::logo::random()));
+
+  let icache = chimper::cache::ImageCache::new();
   let imap = Mutex::new(ImageMapping {
     id: None,
     img: None,
+    oldrawid: None,
     alldone: true,
   });
-  let mut chimp = Chimper::new(logoid, &imap);
-  let icache = chimper::cache::ImageCache::new();
-  let mut oldrawid: Option<conrod::image::Id> = None;
 
-  let imapref = &imap;
+  crossbeam::scope(|scope| {
+    let mut chimp = Chimper::new(logoid, &imap);
+    window.run(&mut chimp, |display, _rederer, image_map, evproxy| {
+      //Load images if needed
+      let image = {
+        let imap = imap.lock().unwrap();
+        if imap.alldone {
+          Arc::new(None)
+        } else {
+          if let Some(ref id) = imap.id {
+            icache.get(id.0.clone(), id.1, scope, evproxy)
+          } else {
+            Arc::new(None)
+          }
+        }
+      };
 
-  window.run(&mut chimp, move |_display, _rederer, image_map, scope, evproxy| {
-//    //Load images if needed
-//    let image = {
-//      let imap = imapref.lock().unwrap();
-//      if imap.alldone {
-//        Arc::new(None)
-//      } else {
-//        if let Some(ref id) = imap.id {
-//          icache.get(id.0.clone(), id.1, scope, evproxy)
-//        } else {
-//          Arc::new(None)
-//        }
-//      }
-//    };
-
-  //    if let Some(ref imgbuf) = *image {
-  //      let dims = (imgbuf.width as u32, imgbuf.height as u32);
-  //      let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(&imgbuf.data, dims);
-  //      let img = glium::texture::SrgbTexture2d::with_format(
-  //        &display,
-  //        raw_image,
-  //        glium::texture::SrgbFormat::U8U8U8,
-  //        glium::texture::MipmapsOption::NoMipmap
-  //      ).unwrap();
-  //      if let Some(id) = oldrawid {
-  //        image_map.remove(id);
-  //      }
-  //      let rawid = image_map.insert(img);
-  //      let mut imap = imap.lock().unwrap();
-  //      imap.img = Some((rawid, dims.0, dims.1));
-  //      imap.alldone = true;
-  //      oldrawid = Some(rawid);
-  //    }
-    //});
+      if let Some(ref imgbuf) = *image {
+        let dims = (imgbuf.width as u32, imgbuf.height as u32);
+        let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(&imgbuf.data, dims);
+        let img = glium::texture::SrgbTexture2d::with_format(
+          display,
+          raw_image,
+          glium::texture::SrgbFormat::U8U8U8,
+          glium::texture::MipmapsOption::NoMipmap
+        ).unwrap();
+        let rawid = image_map.insert(img);
+        let mut imap = imap.lock().unwrap();
+        if let Some(id) = imap.oldrawid {
+          image_map.remove(id);
+        }
+        imap.img = Some((rawid, dims.0, dims.1));
+        imap.alldone = true;
+        imap.oldrawid = Some(rawid);
+      }
+    });
   });
 }
 

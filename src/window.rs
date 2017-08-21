@@ -118,7 +118,6 @@ impl ChimperWindow {
     where F: Fn(&mut glium::Display,
                 &mut conrod::backend::glium::Renderer,
                 &mut conrod::image::Map<SrgbTexture2d>, 
-                &crossbeam::Scope, 
                 glium::glutin::EventsLoopProxy) -> () {
     crossbeam::scope(|scope| {
       // A channel to send events from the main `winit` thread to the conrod thread.
@@ -186,7 +185,7 @@ impl ChimperWindow {
         });
 
         // Run any app specific code
-        closure(display, renderer, image_map, scope, evproxy);
+        closure(display, renderer, image_map, evproxy);
 
         // Draw the most recently received `conrod::render::Primitives` sent from the `Ui`.
         if let Some(primitives) = render_rx.try_iter().last() {

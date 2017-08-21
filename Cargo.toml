@@ -33,3 +33,11 @@ panic = "unwind"
 [profile.dev]
 panic = "unwind"
 opt-level = 3
+
+[[bin]]
+name = "chimper"
+doc = false
+
+[[bin]]
+name = "test"
+doc = false

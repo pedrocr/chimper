@@ -35,7 +35,7 @@ impl chimper::window::ChimperApp for App {
     self.ids = Some(AppIds::new(ui.widget_id_generator()));
   }
 
-  fn draw_gui(&mut self, ui: &mut conrod::Ui, evproxy: &glium::glutin::EventsLoopProxy) {
+  fn draw_gui(&mut self, ui: &mut conrod::Ui, evproxy: &glium::glutin::EventsLoopProxy) -> bool {
     // Here we draw our GUI itself
 
     // FIXME: this again an ugly bit that should disappear
@@ -51,6 +51,8 @@ impl chimper::window::ChimperApp for App {
 
     // We can use the proxy to wake up the event loop and force a redraw
     evproxy.wakeup().is_ok();
+
+    false
   }
 
   fn process_event(&mut self, event: &conrod::event::Input) {

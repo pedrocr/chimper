@@ -7,6 +7,8 @@ use std;
 extern crate crossbeam;
 extern crate rusttype;
 
+const DUMMY_EVENT: conrod::event::Input = conrod::event::Input::Press(conrod::input::Button::Keyboard(conrod::input::Key::Unknown));
+
 pub struct ChimperWindow {
   evloop: glium::glutin::EventsLoop,
   display: glium::Display,
@@ -18,7 +20,7 @@ pub struct ChimperWindow {
 
 pub trait ChimperApp: Sync+Send {
   fn initialize(&mut self, _ui: &mut conrod::Ui) {}
-  fn draw_gui(&mut self, ui: &mut conrod::Ui, evproxy: &glium::glutin::EventsLoopProxy);
+  fn draw_gui(&mut self, ui: &mut conrod::Ui, evproxy: &glium::glutin::EventsLoopProxy) -> bool;
   fn process_event(&mut self, event: &conrod::event::Input);
 }
 
@@ -72,13 +74,15 @@ impl ChimperWindow {
         events.push(event);
       }
 
+      eprintln!("Blocked at conrod");
       // If there are no events pending, wait for them.
-      if events.is_empty() || !needs_update {
+      if events.is_empty() && !needs_update {
         match event_rx.recv() {
           Ok(event) => events.push(event),
           Err(_) => break 'conrod,
         };
       }
+      eprintln!("Unblocked at conrod");
 
       needs_update = false;
       // Input each event into the `Ui`.
@@ -88,7 +92,7 @@ impl ChimperWindow {
         needs_update = true;
       }
 
-      app.draw_gui(&mut ui, &evproxy);
+      needs_update = app.draw_gui(&mut ui, &evproxy) || needs_update;
 
       // Render the `Ui` to a list of primitives that we can send to the main thread for
       // display. Wakeup `winit` for rendering.
@@ -148,7 +152,10 @@ impl ChimperWindow {
         let display = &mut self.display;
         let renderer = &mut self.renderer;
         let image_map = &mut self.image_map;
+
+        eprintln!("Blocked at winit");
         evloop.run_forever(|event| {
+          eprintln!("Unblocked at winit");
           // Use the `winit` backend feature to convert the winit event to a conrod one.
           if let Some(event) = conrod::backend::winit::convert_event(event.clone(), display) {
             event_tx.send(event).unwrap();
@@ -177,7 +184,11 @@ impl ChimperWindow {
               },
               _ => {},
             },
-            glium::glutin::Event::Awakened => return glium::glutin::ControlFlow::Break,
+            glium::glutin::Event::Awakened => {
+              // inject a dummy event in conrod to make sure it updates after loop wakeup
+              event_tx.send(DUMMY_EVENT).unwrap();
+              return glium::glutin::ControlFlow::Break;
+            }
             _ => (),
           }
 
@@ -186,6 +197,9 @@ impl ChimperWindow {
 
         // Run any app specific code
         closure(display, renderer, image_map, evproxy);
+
+        // dummy event to re-render after adjusting stuff
+        event_tx.send(DUMMY_EVENT).unwrap();
 
         // Draw the most recently received `conrod::render::Primitives` sent from the `Ui`.
         if let Some(primitives) = render_rx.try_iter().last() {

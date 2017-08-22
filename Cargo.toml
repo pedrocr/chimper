@@ -43,3 +43,7 @@ doc = false
 [[bin]]
 name = "test"
 doc = false
+
+[[bin]]
+name = "test_awakened"
+doc = false

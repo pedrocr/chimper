@@ -5,7 +5,6 @@ extern crate multicache;
 use self::multicache::MultiCache;
 use std::sync::Arc;
 use std::path::Path;
-use std;
 use self::rawloader::SRGBImage;
 use conrod::backend::glium::glium;
 
@@ -56,8 +55,6 @@ impl ImageCache {
     let maxheight = SIZES[size][1];
 
     scope.spawn(move || {
-      std::thread::sleep(std::time::Duration::from_millis(1000));
-
       let decoded = match rawloader::decode(&path) {
         Ok(img) => img.to_srgb(maxwidth, maxheight).unwrap(),
         // If we couldn't load it as a raw try with the normal image loading

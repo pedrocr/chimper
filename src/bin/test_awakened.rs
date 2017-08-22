@@ -99,17 +99,10 @@ fn main() {
   let mut awake_count = 0;
   let mut draw_count = 0;
   loop {
-    let (wakeup_tx, wakeup_rx) = std::sync::mpsc::channel();
-
+    // BUG: This should ensure we are busy looping forever but doesn't
     let evproxy = events_loop.create_proxy();
-    std::thread::spawn(move || {
-      // BUG: This should ensure we are busy looping forever but doesn't
-      evproxy.wakeup().ok();
-      wakeup_tx.send(true).unwrap();
-    });
-
-    // Make sure wakeup has been called
-    wakeup_rx.recv().unwrap();
+    evproxy.wakeup().ok();
+    std::thread::sleep(std::time::Duration::from_secs(1));
 
     events_loop.run_forever(|event| {
       // Use the `winit` backend feature to convert the winit event to a conrod one.

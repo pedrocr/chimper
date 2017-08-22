@@ -18,6 +18,8 @@ multicache = "0.4.1"
 
 [dependencies.conrod]
 version = "0.54.0"
+git = "https://github.com/PistonDevelopers/conrod.git"
+rev = "347fb99515d51a6182bb112b664a336cebf1a816"
 features = ["glium", "winit"]
 
 [replace]

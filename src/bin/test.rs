@@ -52,6 +52,7 @@ impl chimper::window::ChimperApp for App {
     // We can use the proxy to wake up the event loop and force a redraw
     evproxy.wakeup().is_ok();
 
+    // return true if you need an update of one of the widgets (e.g., animation)
     false
   }
 
@@ -74,5 +75,8 @@ fn main() {
   window.run(&mut app, move |_display, _renderer, _image_map, _evproxy| {
     // Do stuff in the winit loop after event processing and before drawing like for
     // example adding/swapping image textures to the image_map
+
+    // return true if we now need to redraw because of changes
+    false
   });
 }

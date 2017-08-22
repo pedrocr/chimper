@@ -212,8 +212,9 @@ fn main() {
         imap.img = Some((rawid, dims.0, dims.1));
         imap.oldrawid = Some(rawid);
         imap.alldone = true;
-
-        eprintln!("Set texture at id rawid {:?}", rawid);
+        true // cause a redraw
+      } else {
+        false
       }
     });
   });

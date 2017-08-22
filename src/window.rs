@@ -7,8 +7,6 @@ use std;
 extern crate crossbeam;
 extern crate rusttype;
 
-const DUMMY_EVENT: conrod::event::Input = conrod::event::Input::Press(conrod::input::Button::Keyboard(conrod::input::Key::Unknown));
-
 pub struct ChimperWindow {
   evloop: glium::glutin::EventsLoop,
   display: glium::Display,
@@ -122,7 +120,7 @@ impl ChimperWindow {
     where F: Fn(&mut glium::Display,
                 &mut conrod::backend::glium::Renderer,
                 &mut conrod::image::Map<SrgbTexture2d>, 
-                glium::glutin::EventsLoopProxy) -> () {
+                glium::glutin::EventsLoopProxy) -> bool {
     crossbeam::scope(|scope| {
       // A channel to send events from the main `winit` thread to the conrod thread.
       let (event_tx, event_rx) = std::sync::mpsc::channel();
@@ -185,8 +183,6 @@ impl ChimperWindow {
               _ => {},
             },
             glium::glutin::Event::Awakened => {
-              // inject a dummy event in conrod to make sure it updates after loop wakeup
-              event_tx.send(DUMMY_EVENT).unwrap();
               return glium::glutin::ControlFlow::Break;
             }
             _ => (),
@@ -195,11 +191,10 @@ impl ChimperWindow {
           glium::glutin::ControlFlow::Continue
         });
 
-        // Run any app specific code
-        closure(display, renderer, image_map, evproxy);
-
-        // dummy event to re-render after adjusting stuff
-        event_tx.send(DUMMY_EVENT).unwrap();
+        // Run any app specific code and then redraw in case things have changed
+        if closure(display, renderer, image_map, evproxy) {
+          event_tx.send(conrod::event::Input::Redraw).unwrap();
+        }
 
         // Draw the most recently received `conrod::render::Primitives` sent from the `Ui`.
         if let Some(primitives) = render_rx.try_iter().last() {

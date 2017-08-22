@@ -72,7 +72,6 @@ impl ChimperWindow {
         events.push(event);
       }
 
-      eprintln!("Blocked at conrod");
       // If there are no events pending, wait for them.
       if events.is_empty() && !needs_update {
         match event_rx.recv() {
@@ -80,7 +79,6 @@ impl ChimperWindow {
           Err(_) => break 'conrod,
         };
       }
-      eprintln!("Unblocked at conrod");
 
       needs_update = false;
       // Input each event into the `Ui`.
@@ -151,9 +149,8 @@ impl ChimperWindow {
         let renderer = &mut self.renderer;
         let image_map = &mut self.image_map;
 
-        eprintln!("Blocked at winit");
-        evloop.run_forever(|event| {
-          eprintln!("Unblocked at winit");
+        // Give up and use polling for now until there's a clean way to do it properly
+        evloop.poll_events(|event| {
           // Use the `winit` backend feature to convert the winit event to a conrod one.
           if let Some(event) = conrod::backend::winit::convert_event(event.clone(), display) {
             event_tx.send(event).unwrap();
@@ -171,24 +168,11 @@ impl ChimperWindow {
                 ..
               } => {
                 closed = true;
-                return glium::glutin::ControlFlow::Break;
-              },
-              // We must re-draw on `Resized`, as the event loops become blocked during
-              // resize on macOS.
-              WindowEvent::Resized(..) => {
-                if let Some(primitives) = render_rx.iter().next() {
-                  Self::draw(&display, renderer, &image_map, &primitives);
-                }
               },
               _ => {},
             },
-            glium::glutin::Event::Awakened => {
-              return glium::glutin::ControlFlow::Break;
-            }
             _ => (),
           }
-
-          glium::glutin::ControlFlow::Continue
         });
 
         // Run any app specific code and then redraw in case things have changed

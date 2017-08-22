@@ -87,11 +87,9 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
               imap.id = newid;
               imap.img = None;
               imap.alldone = false;
-              eprintln!("Waking up after changing the image");
               evproxy.wakeup().is_ok();
               None
             } else {
-              eprintln!("New id is correct imag.img.is_some() {}", imap.img.is_some());
               imap.img
             }
           },
@@ -99,8 +97,6 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
       };
 
       if let Some((rawid,maxw,maxh)) = img {
-        eprintln!("Found image with id {:?}", rawid);
-
         let scale = (maxw as f64)/(maxh as f64);
         let mut width = (ui.w_of(ids.imgcanvas).unwrap() - self.imagepadding).min(maxw as f64);
         let mut height = (ui.h_of(ids.imgcanvas).unwrap() - self.imagepadding).min(maxh as f64);
@@ -113,8 +109,6 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
           .w_h(width, height)
           .middle_of(ids.imgcanvas)
           .set(ids.raw_image, ui);
-      } else {
-        eprintln!("No image yet");
       }
 
       if sidewidth > 0.0 {
@@ -133,7 +127,6 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
         //.show_hidden_files(true)  // Use this to show hidden files
         .set(ids.filenav, ui)
       {
-        //eprintln!("Caught event {:?}", event);
         match event {
           conrod::widget::file_navigator::Event::ChangeSelection(pbuf) => {
             if pbuf.len() > 0 {
@@ -194,8 +187,6 @@ fn main() {
       };
 
       if let Some(ref imgbuf) = *image {
-        std::thread::sleep(std::time::Duration::from_millis(1000));
-
         let dims = (imgbuf.width as u32, imgbuf.height as u32);
         let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(&imgbuf.data, dims);
         let img = glium::texture::SrgbTexture2d::with_format(

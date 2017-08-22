@@ -80,7 +80,6 @@ impl ImageCache {
       };
       let imgsize = decoded.width*decoded.height*3;
       self.images.put((path.clone(), size), Some(decoded), imgsize);
-      eprintln!("Waking up after loading the image");
       evproxy.wakeup().is_ok();
     });
   }

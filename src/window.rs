@@ -2,7 +2,7 @@ extern crate conrod;
 use conrod::backend::glium::glium::{self, Surface};
 use conrod::backend::glium::glium::texture::srgb_texture2d::SrgbTexture2d;
 use conrod::backend::glium::glium::texture::RawImage2d;
-use conrod::backend::glium::glium::glutin::{Event, WindowEvent, VirtualKeyCode};
+use conrod::backend::glium::glium::glutin::{Event, WindowEvent, VirtualKeyCode, ElementState};
 use std;
 extern crate crossbeam;
 extern crate rusttype;
@@ -133,6 +133,7 @@ impl ChimperWindow {
       // Run the `winit` loop.
       let mut last_update = std::time::Instant::now();
       let mut closed = false;
+      let mut fullscreen = false;
       while !closed {
         // We don't want to loop any faster than 60 FPS, so wait until it has been at least
         // 16ms since the last yield.
@@ -168,6 +169,17 @@ impl ChimperWindow {
                 ..
               } => {
                 closed = true;
+              },
+              WindowEvent::KeyboardInput {
+                input: glium::glutin::KeyboardInput {
+                  virtual_keycode: Some(VirtualKeyCode::F11),
+                  state: ElementState::Pressed,
+                  ..
+                },
+                ..
+              } => {
+                fullscreen = !fullscreen;
+                display.gl_window().window().set_fullscreen_windowed(fullscreen);
               },
               _ => {},
             },

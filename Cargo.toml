@@ -38,3 +38,7 @@ doc = false
 [[bin]]
 name = "test_awakened"
 doc = false
+
+[[bin]]
+name = "test_evloop"
+doc = false

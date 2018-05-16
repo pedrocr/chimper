@@ -5,7 +5,7 @@ authors = ["Pedro Côrte-Real <pedro@pedrocr.net>"]
 description = "A graphical image viewer"
 #homepage = "..."
 repository = "https://github.com/pedrocr/chimper"
-license = "GPL-2.1"
+license = "GPL-3.0"
 categories = ["multimedia::images"]
 
 [dependencies]

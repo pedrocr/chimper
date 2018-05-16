@@ -179,7 +179,12 @@ impl ChimperWindow {
                 ..
               } => {
                 fullscreen = !fullscreen;
-                display.gl_window().window().set_fullscreen_windowed(fullscreen);
+                if fullscreen {
+                  let monitor = display.gl_window().window().get_current_monitor();
+                  display.gl_window().window().set_fullscreen(Some(monitor));
+                } else {
+                  display.gl_window().window().set_fullscreen(None);
+                }
               },
               _ => {},
             },
@@ -206,7 +211,7 @@ impl ChimperWindow {
   }
 
   fn load_font(buf: &[u8]) -> rusttype::Font {
-    rusttype::FontCollection::from_bytes(buf).into_font().unwrap()
+    rusttype::FontCollection::from_bytes(buf).unwrap().into_font().unwrap()
   }
 
   // Load the image from a file

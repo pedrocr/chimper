@@ -17,6 +17,7 @@ Keyboard Shortcuts
 
 * <kbd>Esc</kbd> — Quit
 * <kbd>F11</kbd> — Toggle fullscreen
+* <kbd>Tab</kbd> — Toggle side bar
 
 Contributing
 ------------

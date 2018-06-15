@@ -1,5 +1,5 @@
 extern crate rand;
-use self::rand::distributions::{IndependentSample, Range};
+use self::rand::Rng;
 
 pub fn random() -> &'static [u8] {
   let mut logos = Vec::<&'static [u8]>::new();
@@ -13,8 +13,7 @@ pub fn random() -> &'static [u8] {
   logos.push(include_bytes!("../icons/chimp8.svg.png"));
   logos.push(include_bytes!("../icons/chimp9.svg.png"));
 
-  let between = Range::new(0, logos.len());
   let mut rng = rand::thread_rng();
-  let idx = between.ind_sample(&mut rng);
+  let idx = rng.gen_range(0, logos.len());
   logos[idx]
 }

@@ -11,7 +11,7 @@ categories = ["multimedia::images"]
 [dependencies]
 rawloader = "0.34.0"
 image = "0.19.0"
-rand = "0.4.2"
+rand = "0.5.1"
 crossbeam = "0.3.2"
 multicache = "0.4.1"
 

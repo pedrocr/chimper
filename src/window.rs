@@ -3,9 +3,9 @@ use conrod::backend::glium::glium::{self, Surface};
 use conrod::backend::glium::glium::texture::srgb_texture2d::SrgbTexture2d;
 use conrod::backend::glium::glium::texture::RawImage2d;
 use conrod::backend::glium::glium::glutin::{Event, WindowEvent, VirtualKeyCode, ElementState};
+use conrod::text::{Font, FontCollection};
 use std;
 extern crate crossbeam;
-extern crate rusttype;
 
 pub struct ChimperWindow {
   evloop: glium::glutin::EventsLoop,
@@ -210,8 +210,8 @@ impl ChimperWindow {
     });
   }
 
-  fn load_font(buf: &[u8]) -> rusttype::Font {
-    rusttype::FontCollection::from_bytes(buf).unwrap().into_font().unwrap()
+  fn load_font(buf: &'static [u8]) -> Font {
+    FontCollection::from_bytes(buf).unwrap().into_font().unwrap()
   }
 
   // Load the image from a file

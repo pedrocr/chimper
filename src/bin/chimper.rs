@@ -6,7 +6,6 @@ use conrod::backend::glium::glium;
 use std::env;
 use std::sync::{Arc, Mutex};
 extern crate crossbeam;
-extern crate rusttype;
 extern crate image;
 
 widget_ids!(

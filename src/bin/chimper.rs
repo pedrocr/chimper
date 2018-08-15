@@ -5,7 +5,7 @@ use conrod::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, colo
 use conrod::backend::glium::glium;
 use std::env;
 use std::sync::{Arc, Mutex};
-extern crate crossbeam;
+extern crate crossbeam_utils;
 extern crate image;
 
 widget_ids!(
@@ -168,7 +168,7 @@ fn main() {
     alldone: true,
   });
 
-  crossbeam::scope(|scope| {
+  crossbeam_utils::thread::scope(|scope| {
     let mut chimp = Chimper::new(logoid, &imap);
     window.run(&mut chimp, |display, _rederer, image_map, evproxy| {
       //Load images if needed

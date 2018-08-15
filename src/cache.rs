@@ -1,4 +1,5 @@
-extern crate crossbeam;
+extern crate crossbeam_utils;
+use self::crossbeam_utils::thread::Scope;
 extern crate imagepipe;
 extern crate multicache;
 use self::multicache::MultiCache;
@@ -36,7 +37,7 @@ impl ImageCache {
     }
   }
 
-  pub fn get<'a>(&'a self, path: String, size: usize, scope: &crossbeam::Scope<'a>, evproxy: glium::glutin::EventsLoopProxy) -> Arc<Option<SRGBImage>> {
+  pub fn get<'a>(&'a self, path: String, size: usize, scope: &Scope<'a>, evproxy: glium::glutin::EventsLoopProxy) -> Arc<Option<SRGBImage>> {
     if let Some(img) = self.images.get(&(path.clone(), size)) {
       // We found at least an empty guard value, return that cloned to activate Arc
       img.clone()
@@ -48,7 +49,7 @@ impl ImageCache {
     }
   }
 
-  fn load_raw<'a>(&'a self, path: String, size: usize, scope: &crossbeam::Scope<'a>, evproxy: glium::glutin::EventsLoopProxy) {
+  fn load_raw<'a>(&'a self, path: String, size: usize, scope: &Scope<'a>, evproxy: glium::glutin::EventsLoopProxy) {
     let maxwidth = SIZES[size][0];
     let maxheight = SIZES[size][1];
 

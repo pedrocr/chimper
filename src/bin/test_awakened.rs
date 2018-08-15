@@ -4,14 +4,15 @@ use conrod::backend::glium::glium::Surface;
 
 fn main() {
   // The initial width and height in "points".
-  const WIN_W: u32 = 400;
-  const WIN_H: u32 = 400;
+  const WIN_W: f64 = 400.0;
+  const WIN_H: f64 = 400.0;
 
   // Build the window.
   let mut events_loop = glium::glutin::EventsLoop::new();
   let window = glium::glutin::WindowBuilder::new()
     .with_title("Conrod with glium!")
-    .with_dimensions(WIN_W, WIN_H);
+    .with_dimensions(glium::glutin::dpi::LogicalSize::new(WIN_W, WIN_H));
+
   let context = glium::glutin::ContextBuilder::new()
     .with_vsync(true)
     .with_multisampling(4);

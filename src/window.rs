@@ -5,7 +5,7 @@ use conrod::backend::glium::glium::texture::RawImage2d;
 use conrod::backend::glium::glium::glutin::{Event, WindowEvent, VirtualKeyCode, ElementState};
 use conrod::text::{Font, FontCollection};
 use std;
-extern crate crossbeam;
+extern crate crossbeam_utils;
 
 pub struct ChimperWindow {
   evloop: glium::glutin::EventsLoop,
@@ -28,7 +28,7 @@ impl ChimperWindow {
     let evloop = glium::glutin::EventsLoop::new();
     let window = glium::glutin::WindowBuilder::new()
       .with_title(name)
-      .with_dimensions(initial_width, initial_height);
+      .with_dimensions(glium::glutin::dpi::LogicalSize::new(initial_width as f64, initial_height as f64));
     let context = glium::glutin::ContextBuilder::new()
       .with_vsync(true)
       .with_multisampling(4);
@@ -119,7 +119,7 @@ impl ChimperWindow {
                 &mut conrod::backend::glium::Renderer,
                 &mut conrod::image::Map<SrgbTexture2d>, 
                 glium::glutin::EventsLoopProxy) -> bool {
-    crossbeam::scope(|scope| {
+    crossbeam_utils::thread::scope(|scope| {
       // A channel to send events from the main `winit` thread to the conrod thread.
       let (event_tx, event_rx) = std::sync::mpsc::channel();
       // A channel to send `render::Primitive`s from the conrod thread to the `winit thread.
@@ -160,7 +160,7 @@ impl ChimperWindow {
           match event {
             Event::WindowEvent { event, .. } => match event {
               // Break from the loop upon `Escape`.
-              WindowEvent::Closed |
+              WindowEvent::Destroyed |
               WindowEvent::KeyboardInput {
                 input: glium::glutin::KeyboardInput {
                   virtual_keycode: Some(VirtualKeyCode::Escape),

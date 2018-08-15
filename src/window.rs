@@ -160,7 +160,7 @@ impl ChimperWindow {
           match event {
             Event::WindowEvent { event, .. } => match event {
               // Break from the loop upon `Escape`.
-              WindowEvent::Destroyed |
+              WindowEvent::CloseRequested |
               WindowEvent::KeyboardInput {
                 input: glium::glutin::KeyboardInput {
                   virtual_keycode: Some(VirtualKeyCode::Escape),

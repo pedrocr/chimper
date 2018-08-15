@@ -1,11 +1,9 @@
 extern crate crossbeam;
-extern crate image;
-extern crate rawloader;
+extern crate imagepipe;
 extern crate multicache;
 use self::multicache::MultiCache;
 use std::sync::Arc;
-use std::path::Path;
-use self::rawloader::SRGBImage;
+use self::imagepipe::SRGBImage;
 use conrod::backend::glium::glium;
 
 const SIZES: [[usize;2];7] = [
@@ -55,24 +53,11 @@ impl ImageCache {
     let maxheight = SIZES[size][1];
 
     scope.spawn(move || {
-      let decoded = match rawloader::decode(&path) {
-        Ok(img) => img.to_srgb(maxwidth, maxheight).unwrap(),
-        // If we couldn't load it as a raw try with the normal image loading
-        Err(_) => match image::open(&Path::new(&path)) {
-          Ok(img) => {
-            let rgb = img.to_rgb();
-            let width = rgb.width() as usize;
-            let height = rgb.height() as usize;
-            SRGBImage {
-              data: rgb.into_raw(),
-              width: width,
-              height: height,
-            }
-          }
-          Err(_) => {
-            eprintln!("Don't know how to load \"{}\"", path);
-            return
-          }
+      let decoded = match imagepipe::simple_decode_8bit(&path, maxwidth, maxheight) {
+        Ok(img) => img,
+        Err(_) => {
+          eprintln!("Don't know how to load \"{}\"", path);
+          return
         },
       };
       let imgsize = decoded.width*decoded.height*3;

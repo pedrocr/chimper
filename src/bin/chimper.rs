@@ -44,7 +44,6 @@ impl<'a> Chimper<'a> {
 struct ImageMapping {
   id: Option<(String, usize)>,
   img: Option<(conrod::image::Id,u32,u32)>,
-  oldrawid: Option<conrod::image::Id>,
   alldone: bool,
 }
 
@@ -164,7 +163,6 @@ fn main() {
   let imap = Mutex::new(ImageMapping {
     id: None,
     img: None,
-    oldrawid: None,
     alldone: true,
   });
 
@@ -196,11 +194,10 @@ fn main() {
         ).unwrap();
         let rawid = image_map.insert(img);
         let mut imap = imap.lock().unwrap();
-        if let Some(id) = imap.oldrawid {
+        if let Some((id,_,_)) = imap.img {
           image_map.remove(id);
         }
         imap.img = Some((rawid, dims.0, dims.1));
-        imap.oldrawid = Some(rawid);
         imap.alldone = true;
         true // cause a redraw
       } else {

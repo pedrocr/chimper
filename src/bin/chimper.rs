@@ -236,19 +236,9 @@ fn main() {
     let mut chimp = Chimper::new(logoid, &imap);
 
     window.run(&mut chimp, |display, _rederer, image_map, evproxy, frame_count| {
-      let mut oldids = oldsref.lock().unwrap();
-
-      //Load images if needed
-      let image = {
-        match *(imap.lock().unwrap()) {
-          ImageState::NoneSelected |
-          ImageState::Loaded{..} => None, // There's nothing to do
-          ImageState::Requested{ref request, ..} => Some((request.clone(), icache.get(request.file.clone(), request.size, scope, evproxy))),
-        }
-      };
-
       // Remove old images if we're already displaying a following frame and thus there are no
       // more remaining references to them
+      let mut oldids = oldsref.lock().unwrap();
       (*oldids).retain(|&(id, frame)| {
         if frame_count > frame {
           image_map.remove(id);
@@ -258,20 +248,29 @@ fn main() {
         }
       });
 
-      if let Some((request, image)) = image {
+      //Load images if needed
+      let mut imap = imap.lock().unwrap();
+      let image = {
+        match *imap {
+          ImageState::NoneSelected |
+          ImageState::Loaded{..} => None, // There's nothing to do
+          ImageState::Requested{ref request, ref current} => Some((
+            request.clone(),
+            current.clone(),
+            icache.get(request.file.clone(), request.size, scope, evproxy)
+          )),
+        }
+      };
+
+      let mut needs_redraw = false;
+      if let Some((request, current, image)) = image {
         if let Some(ref imgbuf) = *image {
           // We've finished a request and need to pass it on to be displayed
 
           // Save the old id for later removal
-          match *(imap.lock().unwrap()) {
-            ImageState::NoneSelected |
-            ImageState::Loaded{..} => panic!("I have a new image and yet am not in a Requested state!"),
-            ImageState::Requested{ref current, ..} => {
-              if let Some(current) = current {
-                oldids.push((current.id, frame_count));
-              }
-            },
-          };
+          if let Some(current) = current {
+            oldids.push((current.id, frame_count));
+          }
 
           // Create a new image
           let dims = (imgbuf.width as u32, imgbuf.height as u32);
@@ -282,25 +281,19 @@ fn main() {
             glium::texture::SrgbFormat::U8U8U8,
             glium::texture::MipmapsOption::NoMipmap
           ).unwrap();
-          let newid = image_map.insert(img);
           let newimage = DisplayableImage {
-            id: newid,
+            id: image_map.insert(img),
             width: dims.0,
             height: dims.1,
           };
 
-          { // Set the new state so from now on draws use this image
-            let mut imap = imap.lock().unwrap();
-            *imap = ImageState::Loaded{request: request.clone(), current: newimage};
-          }
+          // Set the new state so from now on draws use this image
+          *imap = ImageState::Loaded{request: request.clone(), current: newimage};
 
-          true // cause a redraw
-        } else {
-          false
+          needs_redraw = true;
         }
-      } else {
-        false
       }
+      needs_redraw
     });
   });
 }

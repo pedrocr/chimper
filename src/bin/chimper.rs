@@ -9,6 +9,8 @@ use std::sync::Mutex;
 extern crate crossbeam_utils;
 extern crate image;
 
+use chimper::cache::RequestedImage;
+
 widget_ids!(
 struct ChimperIds {
   background, imgcanvas, dragcanvas, setcanvas, settop, setcont, raw_image, chimper, filenav, dropdown
@@ -64,13 +66,6 @@ struct DisplayableImage {
   height: u32,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-struct RequestedImage {
-  file: String,
-  size: usize,
-  ops: Option<imagepipe::PipelineOps>,
-}
-
 #[derive(Debug, Clone)]
 enum ImageState {
   NoneSelected,
@@ -106,10 +101,24 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
         ])),
       ]).border(0.0).set(ids.background, ui);
 
-      let size = chimper::cache::smallest_size(ui.win_w as usize, ui.win_h as usize);
 
       {
         let mut imap = self.imap.lock().unwrap();
+
+        let size = chimper::cache::smallest_size(ui.win_w as usize, ui.win_h as usize);
+        let ops = match *imap {
+          ImageState::NoneSelected => None,
+          ImageState::Requested{ref request, ..} |
+          ImageState::Loaded{ref request, ..} => {
+            if Some(request.file.clone()) == self.file {
+              request.ops.clone()
+            } else {
+              None
+            }
+          },
+        };
+
+        // Here we need to actually mess with ops based on the interface
 
         let (new_state, image) = match self.file {
           None => (None, None),
@@ -117,7 +126,7 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
             let new_request = RequestedImage {
               file: (*file).clone(),
               size: size,
-              ops: None,
+              ops,
             };
             match *imap {
               ImageState::NoneSelected => {
@@ -255,7 +264,7 @@ fn main() {
           ImageState::Requested{ref request, ref current} => Some((
             request.clone(),
             current.clone(),
-            icache.get(request.file.clone(), request.size, scope, evproxy)
+            icache.get(request.clone(), scope, evproxy)
           )),
         }
       };

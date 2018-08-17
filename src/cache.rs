@@ -7,6 +7,13 @@ use std::sync::Arc;
 use self::imagepipe::SRGBImage;
 use conrod::backend::glium::glium;
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct RequestedImage {
+  pub file: String,
+  pub size: usize,
+  pub ops: Option<imagepipe::PipelineOps>,
+}
+
 const SIZES: [[usize;2];7] = [
   [640, 480],   //  0,3MP - Small thumbnail
   [1400, 800],  //  1,1MP - 720p+
@@ -37,40 +44,43 @@ impl ImageCache {
     }
   }
 
-  pub fn get<'a>(&'a self, path: String, size: usize, scope: &Scope<'a>, evproxy: glium::glutin::EventsLoopProxy) -> Arc<Option<(SRGBImage, imagepipe::PipelineOps)>> {
-    if let Some(img) = self.images.get(&(path.clone(), size)) {
+  pub fn get<'a>(&'a self, req: RequestedImage, scope: &Scope<'a>, evproxy: glium::glutin::EventsLoopProxy) -> Arc<Option<(SRGBImage, imagepipe::PipelineOps)>> {
+    if let Some(img) = self.images.get(&(req.file.clone(), req.size)) {
       // We found at least an empty guard value, return that cloned to activate Arc
       img.clone()
     } else {
       // Write a None to avoid any reissues of the same thread
-      self.images.put((path.clone(), size), None, 0);
-      self.load_raw(path, size, scope, evproxy);
+      self.images.put((req.file.clone(), req.size), None, 0);
+      self.load_raw(req, scope, evproxy);
       Arc::new(None)
     }
   }
 
-  fn load_raw<'a>(&'a self, path: String, size: usize, scope: &Scope<'a>, evproxy: glium::glutin::EventsLoopProxy) {
-    let maxwidth = SIZES[size][0];
-    let maxheight = SIZES[size][1];
+  fn load_raw<'a>(&'a self, req: RequestedImage, scope: &Scope<'a>, evproxy: glium::glutin::EventsLoopProxy) {
+    let maxwidth = SIZES[req.size][0];
+    let maxheight = SIZES[req.size][1];
 
     scope.spawn(move || {
-      let mut pipeline = match imagepipe::Pipeline::new_from_file(&path, maxwidth, maxheight, false) {
+      let mut pipeline = match imagepipe::Pipeline::new_from_file(&req.file, maxwidth, maxheight, false) {
         Ok(pipe) => pipe,
         Err(_) => {
-          eprintln!("Don't know how to load \"{}\"", path);
+          eprintln!("Don't know how to load \"{}\"", req.file);
           return
         },
       };
+      if let Some(ops) = req.ops {
+        pipeline.ops = ops;
+      }
       let decoded = match pipeline.output_8bit() {
         Ok(img) => img,
         Err(_) => {
-          eprintln!("Processing for \"{}\" failed", path);
+          eprintln!("Processing for \"{}\" failed", req.file);
           return
         },
       };
       let imgsize = decoded.width*decoded.height*3;
       let ops = pipeline.ops.clone();
-      self.images.put((path.clone(), size), Some((decoded, ops)), imgsize);
+      self.images.put((req.file.clone(), req.size), Some((decoded, ops)), imgsize);
       evproxy.wakeup().is_ok();
     });
   }

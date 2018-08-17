@@ -105,15 +105,18 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
       ]).border(0.0).set(ids.background, ui);
 
       let size = chimper::cache::smallest_size(ui.win_w as usize, ui.win_h as usize);
-      let image = {
-        match self.file {
-          None => None,
+
+      let new_state = {
+        let imap = self.imap.lock().unwrap();
+
+        let (new_state, image) = match self.file {
+          None => (None, None),
           Some(ref file) => {
             let new_request = RequestedImage {
               file: (*file).clone(),
               size: size,
             };
-            let (new_state, image) = match *(self.imap.lock().unwrap()) {
+            match *imap {
               ImageState::NoneSelected => {
                 (Some(ImageState::Requested {request: new_request, current: None}), None)
               },
@@ -131,30 +134,31 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
                   (None, Some(current.clone()))
                 }
               },
-            };
-            if let Some(new_state) = new_state {
-              let mut imap = self.imap.lock().unwrap();
-              *imap = new_state;
-              evproxy.wakeup().is_ok();
             }
-            image
-          },
+          }
+        };
+
+        if let Some(image) = image {
+          let scale = (image.width as f64)/(image.height as f64);
+          let mut width = (ui.w_of(ids.imgcanvas).unwrap() - self.imagepadding).min(image.width as f64);
+          let mut height = (ui.h_of(ids.imgcanvas).unwrap() - self.imagepadding).min(image.height as f64);
+          if width/height > scale {
+            width = height * scale;
+          } else {
+            height = width / scale;
+          }
+          widget::Image::new(image.id)
+            .w_h(width, height)
+            .middle_of(ids.imgcanvas)
+            .set(ids.raw_image, ui);
         }
+        new_state
       };
 
-      if let Some(image) = image {
-        let scale = (image.width as f64)/(image.height as f64);
-        let mut width = (ui.w_of(ids.imgcanvas).unwrap() - self.imagepadding).min(image.width as f64);
-        let mut height = (ui.h_of(ids.imgcanvas).unwrap() - self.imagepadding).min(image.height as f64);
-        if width/height > scale {
-          width = height * scale;
-        } else {
-          height = width / scale;
-        }
-        widget::Image::new(image.id)
-          .w_h(width, height)
-          .middle_of(ids.imgcanvas)
-          .set(ids.raw_image, ui);
+      if let Some(new_state) = new_state {
+        let mut imap = self.imap.lock().unwrap();
+        *imap = new_state;
+        evproxy.wakeup().is_ok();
       }
 
       if sidewidth > 0.0 {

@@ -7,7 +7,7 @@ use std::sync::Arc;
 use self::imagepipe::SRGBImage;
 use conrod::backend::glium::glium;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RequestedImage {
   pub file: String,
   pub size: usize,
@@ -34,7 +34,7 @@ pub fn smallest_size(width: usize, height: usize) -> usize {
 }
 
 pub struct ImageCache {
-  images: MultiCache<(String, usize, imagepipe::Orientation), Option<(SRGBImage, imagepipe::PipelineOps)>>,
+  images: MultiCache<RequestedImage, Option<(SRGBImage, imagepipe::PipelineOps)>>,
 }
 
 impl ImageCache {
@@ -45,18 +45,12 @@ impl ImageCache {
   }
 
   pub fn get<'a>(&'a self, req: RequestedImage, scope: &Scope<'a>, evproxy: glium::glutin::EventsLoopProxy) -> Arc<Option<(SRGBImage, imagepipe::PipelineOps)>> {
-    let orientation = if let Some(ref ops) = req.ops {
-      ops.transform.orientation
-    } else {
-      imagepipe::Orientation::Unknown
-    };
-
-    if let Some(img) = self.images.get(&(req.file.clone(), req.size, orientation)) {
+    if let Some(img) = self.images.get(&req) {
       // We found at least an empty guard value, return that cloned to activate Arc
       img.clone()
     } else {
       // Write a None to avoid any reissues of the same thread
-      self.images.put((req.file.clone(), req.size, orientation), None, 0);
+      self.images.put(req.clone(), None, 0);
       self.load_raw(req, scope, evproxy);
       Arc::new(None)
     }
@@ -65,11 +59,6 @@ impl ImageCache {
   fn load_raw<'a>(&'a self, req: RequestedImage, scope: &Scope<'a>, evproxy: glium::glutin::EventsLoopProxy) {
     let maxwidth = SIZES[req.size][0];
     let maxheight = SIZES[req.size][1];
-    let orientation = if let Some(ref ops) = req.ops {
-      ops.transform.orientation
-    } else {
-      imagepipe::Orientation::Unknown
-    };
 
     scope.spawn(move || {
       eprintln!("processing {}", req.file);
@@ -81,8 +70,8 @@ impl ImageCache {
           return
         },
       };
-      if let Some(ops) = req.ops {
-        pipeline.ops = ops;
+      if let Some(ref ops) = req.ops {
+        pipeline.ops = ops.clone();
       }
       let decoded = match pipeline.output_8bit() {
         Ok(img) => img,
@@ -93,7 +82,7 @@ impl ImageCache {
       };
       let imgsize = decoded.width*decoded.height*3;
       let ops = pipeline.ops.clone();
-      self.images.put((req.file.clone(), req.size, orientation), Some((decoded, ops)), imgsize);
+      self.images.put(req.clone(), Some((decoded, ops)), imgsize);
       evproxy.wakeup().is_ok();
     });
   }

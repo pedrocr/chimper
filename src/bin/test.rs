@@ -72,7 +72,7 @@ fn main() {
   let mut window = chimper::window::ChimperWindow::new("Testing", 600, 600);
   let mut app = App::new();
 
-  window.run(&mut app, move |_display, _renderer, _image_map, _evproxy| {
+  window.run(&mut app, move |_display, _renderer, _image_map, _evproxy, _frame_count| {
     // Do stuff in the winit loop after event processing and before drawing like for
     // example adding/swapping image textures to the image_map
 

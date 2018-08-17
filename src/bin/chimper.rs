@@ -226,10 +226,15 @@ fn main() {
 
   let icache = chimper::cache::ImageCache::new();
   let imap = Mutex::new(ImageState::NoneSelected);
+  let oldids: Mutex<Vec<(conrod::image::Id, u64)>> = Mutex::new(Vec::new());
+  let oldsref = &oldids;
 
   crossbeam_utils::thread::scope(|scope| {
     let mut chimp = Chimper::new(logoid, &imap);
-    window.run(&mut chimp, |display, _rederer, image_map, evproxy| {
+
+    window.run(&mut chimp, |display, _rederer, image_map, evproxy, frame_count| {
+      let mut oldids = oldsref.lock().unwrap();
+
       //Load images if needed
       let image = {
         match *(imap.lock().unwrap()) {
@@ -239,19 +244,28 @@ fn main() {
         }
       };
 
+      // Remove old images if we're already displaying a following frame and thus there are no
+      // more remaining references to them
+      (*oldids).retain(|&(id, frame)| {
+        if frame_count > frame {
+          image_map.remove(id);
+          false
+        } else {
+          true
+        }
+      });
+
       if let Some((request, image)) = image {
         if let Some(ref imgbuf) = *image {
           // We've finished a request and need to pass it on to be displayed
 
           // Save the old id for later removal
-          let oldid = match *(imap.lock().unwrap()) {
+          match *(imap.lock().unwrap()) {
             ImageState::NoneSelected |
             ImageState::Loaded{..} => panic!("I have a new image and yet am not in a Requested state!"),
             ImageState::Requested{ref current, ..} => {
               if let Some(current) = current {
-                Some(current.id)
-              } else {
-                None
+                oldids.push((current.id, frame_count));
               }
             },
           };
@@ -275,11 +289,6 @@ fn main() {
           { // Set the new state so from now on draws use this image
             let mut imap = imap.lock().unwrap();
             *imap = ImageState::Loaded{request: request.clone(), current: newimage};
-          }
-
-          // Cleanup the old image, now unused
-          if let Some(oldid) = oldid {
-            image_map.remove(oldid);
           }
 
           true // cause a redraw

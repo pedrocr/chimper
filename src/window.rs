@@ -118,7 +118,9 @@ impl ChimperWindow {
     where F: Fn(&mut glium::Display,
                 &mut conrod::backend::glium::Renderer,
                 &mut conrod::image::Map<SrgbTexture2d>, 
-                glium::glutin::EventsLoopProxy) -> bool {
+                glium::glutin::EventsLoopProxy,
+                u64) -> bool {
+
     crossbeam_utils::thread::scope(|scope| {
       // A channel to send events from the main `winit` thread to the conrod thread.
       let (event_tx, event_rx) = std::sync::mpsc::channel();
@@ -134,6 +136,7 @@ impl ChimperWindow {
       let mut last_update = std::time::Instant::now();
       let mut closed = false;
       let mut fullscreen = false;
+      let mut frame_count: u64 = 0;
       while !closed {
         // We don't want to loop any faster than 60 FPS, so wait until it has been at least
         // 16ms since the last yield.
@@ -193,7 +196,7 @@ impl ChimperWindow {
         });
 
         // Run any app specific code and then redraw in case things have changed
-        if closure(display, renderer, image_map, evproxy) {
+        if closure(display, renderer, image_map, evproxy, frame_count) {
           event_tx.send(conrod::event::Input::Redraw).unwrap();
         }
 
@@ -202,6 +205,7 @@ impl ChimperWindow {
             Self::draw(&display, renderer, &image_map, &primitives);
         }
 
+        frame_count += 1;
         last_update = std::time::Instant::now();
       }
 

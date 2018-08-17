@@ -4,7 +4,7 @@ extern crate chimper;
 use conrod::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, color};
 use conrod::backend::glium::glium;
 use std::env;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 extern crate crossbeam_utils;
 extern crate image;
 
@@ -31,7 +31,7 @@ struct Chimper<'a> {
   use_sidepane: bool,
   logoid: conrod::image::Id,
   ids: Option<ChimperIds>,
-  imap: &'a Mutex<ImageMapping>,
+  imap: &'a Mutex<ImageState>,
   file: Option<String>,
   directory: std::path::PathBuf,
   sideopt: bool,
@@ -39,7 +39,7 @@ struct Chimper<'a> {
 }
 
 impl<'a> Chimper<'a> {
-  fn new(logoid: conrod::image::Id, imap: &'a Mutex<ImageMapping>,) -> Self {
+  fn new(logoid: conrod::image::Id, imap: &'a Mutex<ImageState>,) -> Self {
     Self {
       dragwidth: 5.0,
       sidewidth: 600.0,
@@ -56,10 +56,24 @@ impl<'a> Chimper<'a> {
   }
 }
 
-struct ImageMapping {
-  id: Option<(String, usize)>,
-  img: Option<(conrod::image::Id,u32,u32)>,
-  alldone: bool,
+#[derive(Debug, Clone)]
+struct DisplayableImage {
+  id: conrod::image::Id,
+  width: u32,
+  height: u32,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct RequestedImage {
+  file: String,
+  size: usize,
+}
+
+#[derive(Debug, Clone)]
+enum ImageState {
+  NoneSelected,
+  Requested{request: RequestedImage, current: Option<DisplayableImage>},
+  Loaded{request: RequestedImage, current: DisplayableImage},
 }
 
 impl<'a> chimper::window::ChimperApp for Chimper<'a> {
@@ -91,35 +105,53 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
       ]).border(0.0).set(ids.background, ui);
 
       let size = chimper::cache::smallest_size(ui.win_w as usize, ui.win_h as usize);
-      let img = {
+      let image = {
         match self.file {
           None => None,
           Some(ref file) => {
-            let newid = Some(((*file).clone(), size));
-            let mut imap = self.imap.lock().unwrap();
-            if imap.id != newid {
-              imap.id = newid;
-              imap.img = None;
-              imap.alldone = false;
+            let new_request = RequestedImage {
+              file: (*file).clone(),
+              size: size,
+            };
+            let (new_state, image) = match *(self.imap.lock().unwrap()) {
+              ImageState::NoneSelected => {
+                (Some(ImageState::Requested {request: new_request, current: None}), None)
+              },
+              ImageState::Requested{ref request, ref current} => {
+                if new_request != *request {
+                  (Some(ImageState::Requested{request: new_request, current: current.clone()}), current.clone())
+                } else {
+                  (None, current.clone())
+                }
+              },
+              ImageState::Loaded{ref request, ref current} => {
+                if new_request != *request {
+                  (Some(ImageState::Requested{request: new_request, current: Some(current.clone())}), Some(current.clone()))
+                } else {
+                  (None, Some(current.clone()))
+                }
+              },
+            };
+            if let Some(new_state) = new_state {
+              let mut imap = self.imap.lock().unwrap();
+              *imap = new_state;
               evproxy.wakeup().is_ok();
-              None
-            } else {
-              imap.img
             }
+            image
           },
         }
       };
 
-      if let Some((rawid,maxw,maxh)) = img {
-        let scale = (maxw as f64)/(maxh as f64);
-        let mut width = (ui.w_of(ids.imgcanvas).unwrap() - self.imagepadding).min(maxw as f64);
-        let mut height = (ui.h_of(ids.imgcanvas).unwrap() - self.imagepadding).min(maxh as f64);
+      if let Some(image) = image {
+        let scale = (image.width as f64)/(image.height as f64);
+        let mut width = (ui.w_of(ids.imgcanvas).unwrap() - self.imagepadding).min(image.width as f64);
+        let mut height = (ui.h_of(ids.imgcanvas).unwrap() - self.imagepadding).min(image.height as f64);
         if width/height > scale {
           width = height * scale;
         } else {
           height = width / scale;
         }
-        widget::Image::new(rawid)
+        widget::Image::new(image.id)
           .w_h(width, height)
           .middle_of(ids.imgcanvas)
           .set(ids.raw_image, ui);
@@ -189,46 +221,67 @@ fn main() {
   let logoid = window.load_texture(load_image(chimper::logo::random()));
 
   let icache = chimper::cache::ImageCache::new();
-  let imap = Mutex::new(ImageMapping {
-    id: None,
-    img: None,
-    alldone: true,
-  });
+  let imap = Mutex::new(ImageState::NoneSelected);
 
   crossbeam_utils::thread::scope(|scope| {
     let mut chimp = Chimper::new(logoid, &imap);
     window.run(&mut chimp, |display, _rederer, image_map, evproxy| {
       //Load images if needed
       let image = {
-        let imap = imap.lock().unwrap();
-        if imap.alldone {
-          Arc::new(None)
-        } else {
-          if let Some(ref id) = imap.id {
-            icache.get(id.0.clone(), id.1, scope, evproxy)
-          } else {
-            Arc::new(None)
-          }
+        match *(imap.lock().unwrap()) {
+          ImageState::NoneSelected |
+          ImageState::Loaded{..} => None, // There's nothing to do
+          ImageState::Requested{ref request, ..} => Some((request.clone(), icache.get(request.file.clone(), request.size, scope, evproxy))),
         }
       };
 
-      if let Some(ref imgbuf) = *image {
-        let dims = (imgbuf.width as u32, imgbuf.height as u32);
-        let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(&imgbuf.data, dims);
-        let img = glium::texture::SrgbTexture2d::with_format(
-          display,
-          raw_image,
-          glium::texture::SrgbFormat::U8U8U8,
-          glium::texture::MipmapsOption::NoMipmap
-        ).unwrap();
-        let rawid = image_map.insert(img);
-        let mut imap = imap.lock().unwrap();
-        if let Some((id,_,_)) = imap.img {
-          image_map.remove(id);
+      if let Some((request, image)) = image {
+        if let Some(ref imgbuf) = *image {
+          // We've finished a request and need to pass it on to be displayed
+
+          // Save the old id for later removal
+          let oldid = match *(imap.lock().unwrap()) {
+            ImageState::NoneSelected |
+            ImageState::Loaded{..} => panic!("I have a new image and yet am not in a Requested state!"),
+            ImageState::Requested{ref current, ..} => {
+              if let Some(current) = current {
+                Some(current.id)
+              } else {
+                None
+              }
+            },
+          };
+
+          // Create a new image
+          let dims = (imgbuf.width as u32, imgbuf.height as u32);
+          let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(&imgbuf.data, dims);
+          let img = glium::texture::SrgbTexture2d::with_format(
+            display,
+            raw_image,
+            glium::texture::SrgbFormat::U8U8U8,
+            glium::texture::MipmapsOption::NoMipmap
+          ).unwrap();
+          let newid = image_map.insert(img);
+          let newimage = DisplayableImage {
+            id: newid,
+            width: dims.0,
+            height: dims.1,
+          };
+
+          { // Set the new state so from now on draws use this image
+            let mut imap = imap.lock().unwrap();
+            *imap = ImageState::Loaded{request: request.clone(), current: newimage};
+          }
+
+          // Cleanup the old image, now unused
+          if let Some(oldid) = oldid {
+            image_map.remove(oldid);
+          }
+
+          true // cause a redraw
+        } else {
+          false
         }
-        imap.img = Some((rawid, dims.0, dims.1));
-        imap.alldone = true;
-        true // cause a redraw
       } else {
         false
       }

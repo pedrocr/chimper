@@ -35,12 +35,14 @@ pub fn smallest_size(width: usize, height: usize) -> usize {
 
 pub struct ImageCache {
   images: MultiCache<RequestedImage, Option<(SRGBImage, imagepipe::PipelineOps)>>,
+  opbuffers: MultiCache<imagepipe::BufHash, imagepipe::OpBuffer>,
 }
 
 impl ImageCache {
   pub fn new() -> ImageCache {
     ImageCache {
       images: MultiCache::new(100000000),
+      opbuffers: MultiCache::new(10),
     }
   }
 
@@ -73,7 +75,7 @@ impl ImageCache {
       if let Some(ref ops) = req.ops {
         pipeline.ops = ops.clone();
       }
-      let decoded = match pipeline.output_8bit() {
+      let decoded = match pipeline.output_8bit(Some(&self.opbuffers)) {
         Ok(img) => img,
         Err(_) => {
           eprintln!("Processing for \"{}\" failed", req.file);

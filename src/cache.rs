@@ -27,7 +27,7 @@ pub fn smallest_size(width: usize, height: usize) -> usize {
 }
 
 pub struct ImageCache {
-  images: MultiCache<(String, usize), Option<SRGBImage>>,
+  images: MultiCache<(String, usize), Option<(SRGBImage, imagepipe::PipelineOps)>>,
 }
 
 impl ImageCache {
@@ -37,7 +37,7 @@ impl ImageCache {
     }
   }
 
-  pub fn get<'a>(&'a self, path: String, size: usize, scope: &Scope<'a>, evproxy: glium::glutin::EventsLoopProxy) -> Arc<Option<SRGBImage>> {
+  pub fn get<'a>(&'a self, path: String, size: usize, scope: &Scope<'a>, evproxy: glium::glutin::EventsLoopProxy) -> Arc<Option<(SRGBImage, imagepipe::PipelineOps)>> {
     if let Some(img) = self.images.get(&(path.clone(), size)) {
       // We found at least an empty guard value, return that cloned to activate Arc
       img.clone()
@@ -54,15 +54,23 @@ impl ImageCache {
     let maxheight = SIZES[size][1];
 
     scope.spawn(move || {
-      let decoded = match imagepipe::simple_decode_8bit(&path, maxwidth, maxheight) {
-        Ok(img) => img,
+      let mut pipeline = match imagepipe::Pipeline::new_from_file(&path, maxwidth, maxheight, false) {
+        Ok(pipe) => pipe,
         Err(_) => {
           eprintln!("Don't know how to load \"{}\"", path);
           return
         },
       };
+      let decoded = match pipeline.output_8bit() {
+        Ok(img) => img,
+        Err(_) => {
+          eprintln!("Processing for \"{}\" failed", path);
+          return
+        },
+      };
       let imgsize = decoded.width*decoded.height*3;
-      self.images.put((path.clone(), size), Some(decoded), imgsize);
+      let ops = pipeline.ops.clone();
+      self.images.put((path.clone(), size), Some((decoded, ops)), imgsize);
       evproxy.wakeup().is_ok();
     });
   }

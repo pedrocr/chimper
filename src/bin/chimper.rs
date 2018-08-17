@@ -68,7 +68,7 @@ struct DisplayableImage {
 struct RequestedImage {
   file: String,
   size: usize,
-  opts: Option<imagepipe::PipelineOps>,
+  ops: Option<imagepipe::PipelineOps>,
 }
 
 #[derive(Debug, Clone)]
@@ -117,7 +117,7 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
             let new_request = RequestedImage {
               file: (*file).clone(),
               size: size,
-              opts: None,
+              ops: None,
             };
             match *imap {
               ImageState::NoneSelected => {
@@ -262,8 +262,9 @@ fn main() {
 
       let mut needs_redraw = false;
       if let Some((request, current, image)) = image {
-        if let Some(ref imgbuf) = *image {
+        if let Some(ref image) = *image {
           // We've finished a request and need to pass it on to be displayed
+          let (imgbuf, ops) = image;
 
           // Save the old id for later removal
           if let Some(current) = current {
@@ -286,7 +287,9 @@ fn main() {
           };
 
           // Set the new state so from now on draws use this image
-          *imap = ImageState::Loaded{request: request.clone(), current: newimage};
+          let mut filled_request = request.clone();
+          filled_request.ops = Some(ops.clone());
+          *imap = ImageState::Loaded{request: filled_request, current: newimage};
 
           needs_redraw = true;
         }

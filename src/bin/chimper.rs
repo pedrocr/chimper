@@ -10,8 +10,19 @@ extern crate image;
 
 widget_ids!(
 struct ChimperIds {
-  background, imgcanvas, dragcanvas, setcanvas, settop, setcont, raw_image, chimper, filenav
+  background, imgcanvas, dragcanvas, setcanvas, settop, setcont, raw_image, chimper, filenav, dropdown
 });
+
+static ORIENTATION_NAMES: [&str; 8] = [
+  "Normal",
+  "HorizontalFlip",
+  "Rotate180",
+  "VerticalFlip",
+  "Transpose",
+  "Rotate90",
+  "Transverse",
+  "Rotate270",
+];
 
 struct Chimper<'a> {
   dragwidth: f64,
@@ -23,12 +34,14 @@ struct Chimper<'a> {
   imap: &'a Mutex<ImageMapping>,
   file: Option<String>,
   directory: std::path::PathBuf,
+  sideopt: bool,
+  orientation: usize,
 }
 
 impl<'a> Chimper<'a> {
   fn new(logoid: conrod::image::Id, imap: &'a Mutex<ImageMapping>,) -> Self {
     Self {
-      dragwidth: 10.0,
+      dragwidth: 5.0,
       sidewidth: 600.0,
       use_sidepane: true,
       imagepadding: 20.0,
@@ -37,6 +50,8 @@ impl<'a> Chimper<'a> {
       imap,
       file: None,
       directory: env::current_dir().unwrap(),
+      sideopt: true,
+      orientation: 0,
     }
   }
 }
@@ -61,13 +76,14 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
     };
 
     let sidewidth = self.sidewidth * ((self.use_sidepane as u8) as f64);
+    let dragwidth = self.dragwidth * ((self.use_sidepane as u8) as f64);
     {
       let ui = &mut ui.set_widgets();
 
       // Construct our main `Canvas` tree.
       widget::Canvas::new().flow_right(&[
         (ids.imgcanvas, widget::Canvas::new().color(color::CHARCOAL).border(0.0)),
-        (ids.dragcanvas, widget::Canvas::new().length(self.dragwidth).color(color::BLACK).border(0.0)),
+        (ids.dragcanvas, widget::Canvas::new().length(dragwidth).color(color::BLACK).border(0.0)),
         (ids.setcanvas, widget::Canvas::new().length(sidewidth).border(0.0).flow_down(&[
           (ids.settop, widget::Canvas::new().color(color::GREY).length(100.0).border(0.0)),
           (ids.setcont, widget::Canvas::new().color(color::GREY).border(0.0)),
@@ -110,33 +126,46 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
       }
 
       if sidewidth > 0.0 {
-        widget::Image::new(self.logoid)
+        for _event in widget::Button::image(self.logoid)
           .w_h(78.0, 88.0)
           .top_right_with_margin_on(ids.settop, 6.0)
-          .set(ids.chimper, ui);
-      }
+          .set(ids.chimper, ui) 
+        {
+          self.sideopt = !self.sideopt;
+        }
 
-      let directory = self.directory.as_path();
-      for event in widget::FileNavigator::all(&directory)
-        .color(conrod::color::LIGHT_BLUE)
-        .font_size(16)
-        .kid_area_wh_of(ids.setcont)
-        .middle_of(ids.setcont)
-        //.show_hidden_files(true)  // Use this to show hidden files
-        .set(ids.filenav, ui)
-      {
-        match event {
-          conrod::widget::file_navigator::Event::ChangeSelection(pbuf) => {
-            if pbuf.len() > 0 {
-              let path = pbuf[0].as_path();
-              if path.is_file() {
-                eprintln!("Loading file {:?}", path);
-                self.file = Some(path.to_str().unwrap().to_string());
-                needs_update = true;
-              }
+        if self.sideopt {
+          let directory = self.directory.as_path();
+          for event in widget::FileNavigator::all(&directory)
+            .color(conrod::color::LIGHT_BLUE)
+            .font_size(16)
+            .kid_area_wh_of(ids.setcont)
+            .middle_of(ids.setcont)
+            //.show_hidden_files(true)  // Use this to show hidden files
+            .set(ids.filenav, ui)
+          {
+            match event {
+              conrod::widget::file_navigator::Event::ChangeSelection(pbuf) => {
+                if pbuf.len() > 0 {
+                  let path = pbuf[0].as_path();
+                  if path.is_file() {
+                    eprintln!("Loading file {:?}", path);
+                    self.file = Some(path.to_str().unwrap().to_string());
+                    needs_update = true;
+                  }
+                }
+              },
+              _ => {},
             }
-          },
-          _ => {},
+          }
+        } else {
+          for event in widget::drop_down_list::DropDownList::new(&ORIENTATION_NAMES, Some(self.orientation))
+            .w_h(130.0, 30.0)
+            .top_left_with_margin_on(ids.setcont, 6.0)
+            .set(ids.dropdown, ui)
+          {
+            self.orientation = event;
+          }
         }
       }
     }

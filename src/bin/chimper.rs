@@ -80,6 +80,8 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
 
   fn draw_gui(&mut self, ui: &mut conrod::Ui, evproxy: &glium::glutin::EventsLoopProxy) -> bool {
     let mut needs_update = false;
+    // While we're drawing the UI the request mutex is ours
+    let mut imap = self.imap.lock().unwrap();
 
     let ids = match self.ids {
       Some(ref ids) => ids,
@@ -101,75 +103,18 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
         ])),
       ]).border(0.0).set(ids.background, ui);
 
-
-      {
-        let mut imap = self.imap.lock().unwrap();
-
-        let size = chimper::cache::smallest_size(ui.win_w as usize, ui.win_h as usize);
-        let ops = match *imap {
-          ImageState::NoneSelected => None,
-          ImageState::Requested{ref request, ..} |
-          ImageState::Loaded{ref request, ..} => {
-            if Some(request.file.clone()) == self.file {
-              request.ops.clone()
-            } else {
-              None
-            }
-          },
-        };
-
-        // Here we need to actually mess with ops based on the interface
-
-        let (new_state, image) = match self.file {
-          None => (None, None),
-          Some(ref file) => {
-            let new_request = RequestedImage {
-              file: (*file).clone(),
-              size: size,
-              ops,
-            };
-            match *imap {
-              ImageState::NoneSelected => {
-                (Some(ImageState::Requested {request: new_request, current: None}), None)
-              },
-              ImageState::Requested{ref request, ref current} => {
-                if new_request != *request {
-                  (Some(ImageState::Requested{request: new_request, current: current.clone()}), current.clone())
-                } else {
-                  (None, current.clone())
-                }
-              },
-              ImageState::Loaded{ref request, ref current} => {
-                if new_request != *request {
-                  (Some(ImageState::Requested{request: new_request, current: Some(current.clone())}), Some(current.clone()))
-                } else {
-                  (None, Some(current.clone()))
-                }
-              },
-            }
-          }
-        };
-
-        if let Some(image) = image {
-          let scale = (image.width as f64)/(image.height as f64);
-          let mut width = (ui.w_of(ids.imgcanvas).unwrap() - self.imagepadding).min(image.width as f64);
-          let mut height = (ui.h_of(ids.imgcanvas).unwrap() - self.imagepadding).min(image.height as f64);
-          if width/height > scale {
-            width = height * scale;
+      let size = chimper::cache::smallest_size(ui.win_w as usize, ui.win_h as usize);
+      let ops = match *imap {
+        ImageState::NoneSelected => None,
+        ImageState::Requested{ref request, ..} |
+        ImageState::Loaded{ref request, ..} => {
+          if Some(request.file.clone()) == self.file {
+            request.ops.clone()
           } else {
-            height = width / scale;
+            None
           }
-          widget::Image::new(image.id)
-            .w_h(width, height)
-            .middle_of(ids.imgcanvas)
-            .set(ids.raw_image, ui);
-        }
-
-        if let Some(new_state) = new_state {
-          *imap = new_state;
-          evproxy.wakeup().is_ok();
-        }
-      }
+        },
+      };
 
       if sidewidth > 0.0 {
         for _event in widget::Button::image(self.logoid)
@@ -213,6 +158,63 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
             self.orientation = event;
           }
         }
+      }
+
+      let ops = if let Some(mut ops) = ops {
+        ops.transform.orientation = imagepipe::Orientation::from_u16(self.orientation as u16);
+        Some(ops)
+      } else {
+        None
+      };
+
+      let (new_state, image) = match self.file {
+        None => (None, None),
+        Some(ref file) => {
+          let new_request = RequestedImage {
+            file: (*file).clone(),
+            size: size,
+            ops,
+          };
+          match *imap {
+            ImageState::NoneSelected => {
+              (Some(ImageState::Requested {request: new_request, current: None}), None)
+            },
+            ImageState::Requested{ref request, ref current} => {
+              if new_request != *request {
+                (Some(ImageState::Requested{request: new_request, current: current.clone()}), current.clone())
+              } else {
+                (None, current.clone())
+              }
+            },
+            ImageState::Loaded{ref request, ref current} => {
+              if new_request != *request {
+                (Some(ImageState::Requested{request: new_request, current: Some(current.clone())}), Some(current.clone()))
+              } else {
+                (None, Some(current.clone()))
+              }
+            },
+          }
+        }
+      };
+
+      if let Some(image) = image {
+        let scale = (image.width as f64)/(image.height as f64);
+        let mut width = (ui.w_of(ids.imgcanvas).unwrap() - self.imagepadding).min(image.width as f64);
+        let mut height = (ui.h_of(ids.imgcanvas).unwrap() - self.imagepadding).min(image.height as f64);
+        if width/height > scale {
+          width = height * scale;
+        } else {
+          height = width / scale;
+        }
+        widget::Image::new(image.id)
+          .w_h(width, height)
+          .middle_of(ids.imgcanvas)
+          .set(ids.raw_image, ui);
+      }
+
+      if let Some(new_state) = new_state {
+        *imap = new_state;
+        evproxy.wakeup().is_ok();
       }
     }
 

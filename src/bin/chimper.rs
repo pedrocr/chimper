@@ -1,4 +1,5 @@
 extern crate chimper;
+extern crate imagepipe;
 
 #[macro_use] extern crate conrod;
 use conrod::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, color};
@@ -67,6 +68,7 @@ struct DisplayableImage {
 struct RequestedImage {
   file: String,
   size: usize,
+  opts: Option<imagepipe::PipelineOps>,
 }
 
 #[derive(Debug, Clone)]
@@ -115,6 +117,7 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
             let new_request = RequestedImage {
               file: (*file).clone(),
               size: size,
+              opts: None,
             };
             match *imap {
               ImageState::NoneSelected => {

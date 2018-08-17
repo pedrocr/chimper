@@ -108,8 +108,8 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
 
       let size = chimper::cache::smallest_size(ui.win_w as usize, ui.win_h as usize);
 
-      let new_state = {
-        let imap = self.imap.lock().unwrap();
+      {
+        let mut imap = self.imap.lock().unwrap();
 
         let (new_state, image) = match self.file {
           None => (None, None),
@@ -155,13 +155,11 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
             .middle_of(ids.imgcanvas)
             .set(ids.raw_image, ui);
         }
-        new_state
-      };
 
-      if let Some(new_state) = new_state {
-        let mut imap = self.imap.lock().unwrap();
-        *imap = new_state;
-        evproxy.wakeup().is_ok();
+        if let Some(new_state) = new_state {
+          *imap = new_state;
+          evproxy.wakeup().is_ok();
+        }
       }
 
       if sidewidth > 0.0 {

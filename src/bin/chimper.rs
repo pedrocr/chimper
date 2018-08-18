@@ -82,6 +82,7 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
     let mut needs_update = false;
     // While we're drawing the UI the request mutex is ours
     let mut imap = self.imap.lock().unwrap();
+    let ui = &mut ui.set_widgets();
 
     let ids = match self.ids {
       Some(ref ids) => ids,
@@ -91,8 +92,6 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
     let sidewidth = self.sidewidth * ((self.use_sidepane as u8) as f64);
     let dragwidth = self.dragwidth * ((self.use_sidepane as u8) as f64);
     {
-      let ui = &mut ui.set_widgets();
-
       // Construct our main `Canvas` tree.
       widget::Canvas::new().flow_right(&[
         (ids.imgcanvas, widget::Canvas::new().color(color::CHARCOAL).border(0.0)),
@@ -115,50 +114,6 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
           }
         },
       };
-
-      if sidewidth > 0.0 {
-        for _event in widget::Button::image(self.logoid)
-          .w_h(78.0, 88.0)
-          .top_right_with_margin_on(ids.settop, 6.0)
-          .set(ids.chimper, ui) 
-        {
-          self.sideopt = !self.sideopt;
-        }
-
-        if self.sideopt {
-          let directory = self.directory.as_path();
-          for event in widget::FileNavigator::all(&directory)
-            .color(conrod::color::LIGHT_BLUE)
-            .font_size(16)
-            .kid_area_wh_of(ids.setcont)
-            .middle_of(ids.setcont)
-            //.show_hidden_files(true)  // Use this to show hidden files
-            .set(ids.filenav, ui)
-          {
-            match event {
-              conrod::widget::file_navigator::Event::ChangeSelection(pbuf) => {
-                if pbuf.len() > 0 {
-                  let path = pbuf[0].as_path();
-                  if path.is_file() {
-                    eprintln!("Loading file {:?}", path);
-                    self.file = Some(path.to_str().unwrap().to_string());
-                    needs_update = true;
-                  }
-                }
-              },
-              _ => {},
-            }
-          }
-        } else {
-          for event in widget::drop_down_list::DropDownList::new(&ORIENTATION_NAMES, Some(self.orientation))
-            .w_h(130.0, 30.0)
-            .top_left_with_margin_on(ids.setcont, 6.0)
-            .set(ids.dropdown, ui)
-          {
-            self.orientation = event;
-          }
-        }
-      }
 
       let ops = if let Some(mut ops) = ops {
         ops.transform.orientation = imagepipe::Orientation::from_u16(self.orientation as u16);
@@ -215,6 +170,51 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
       if let Some(new_state) = new_state {
         *imap = new_state;
         evproxy.wakeup().is_ok();
+      }
+    }
+
+    if sidewidth > 0.0 {
+      for _event in widget::Button::image(self.logoid)
+        .w_h(78.0, 88.0)
+        .top_right_with_margin_on(ids.settop, 6.0)
+        .set(ids.chimper, ui)
+      {
+        self.sideopt = !self.sideopt;
+      }
+
+      if self.sideopt {
+        let directory = self.directory.as_path();
+        for event in widget::FileNavigator::all(&directory)
+          .color(conrod::color::LIGHT_BLUE)
+          .font_size(16)
+          .kid_area_wh_of(ids.setcont)
+          .middle_of(ids.setcont)
+          //.show_hidden_files(true)  // Use this to show hidden files
+          .set(ids.filenav, ui)
+        {
+          match event {
+            conrod::widget::file_navigator::Event::ChangeSelection(pbuf) => {
+              if pbuf.len() > 0 {
+                let path = pbuf[0].as_path();
+                if path.is_file() {
+                  eprintln!("Loading file {:?}", path);
+                  self.file = Some(path.to_str().unwrap().to_string());
+                  needs_update = true;
+                }
+              }
+            },
+            _ => {},
+          }
+        }
+      } else {
+        for event in widget::drop_down_list::DropDownList::new(&ORIENTATION_NAMES, Some(self.orientation))
+          .w_h(130.0, 30.0)
+          .top_left_with_margin_on(ids.setcont, 6.0)
+          .set(ids.dropdown, ui)
+        {
+          self.orientation = event;
+          needs_update = true;
+        }
       }
     }
 

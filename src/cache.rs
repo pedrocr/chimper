@@ -40,9 +40,9 @@ pub struct ImageCache {
 
 impl ImageCache {
   pub fn new() -> ImageCache {
-    ImageCache {
+    ImageCache { // For now default to 100MiB for both caches
       images: MultiCache::new(100000000),
-      opbuffers: MultiCache::new(10),
+      opbuffers: MultiCache::new(100000000),
     }
   }
 

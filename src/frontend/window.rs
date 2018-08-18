@@ -58,7 +58,7 @@ impl ChimperWindow {
                 initial_width: u32, initial_height: u32) {
     // Construct our `Ui`.
     let mut ui = conrod::UiBuilder::new([initial_width as f64, initial_height as f64]).build();
-    ui.fonts.insert(Self::load_font(include_bytes!("../fonts/NotoSans-Regular.ttf")));
+    ui.fonts.insert(Self::load_font(include_bytes!("../../fonts/NotoSans-Regular.ttf")));
 
     app.initialize(&mut ui);
 

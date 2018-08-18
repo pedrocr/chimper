@@ -1,5 +1,4 @@
-extern crate conrod;
+#[macro_use] extern crate conrod;
 
-pub mod cache;
-pub mod logo;
-pub mod window;
+pub mod frontend;
+pub mod backend;

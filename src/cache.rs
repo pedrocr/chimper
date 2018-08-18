@@ -35,14 +35,14 @@ pub fn smallest_size(width: usize, height: usize) -> usize {
 
 pub struct ImageCache {
   images: MultiCache<RequestedImage, Option<(SRGBImage, imagepipe::PipelineOps)>>,
-  opbuffers: MultiCache<imagepipe::BufHash, imagepipe::OpBuffer>,
+  opbuffers: imagepipe::PipelineCache,
 }
 
 impl ImageCache {
   pub fn new() -> ImageCache {
     ImageCache { // For now default to 100MiB for both caches
       images: MultiCache::new(100000000),
-      opbuffers: MultiCache::new(100000000),
+      opbuffers: imagepipe::Pipeline::new_cache(100000000),
     }
   }
 

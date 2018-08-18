@@ -38,7 +38,7 @@ struct Chimper<'a> {
   file: Option<String>,
   directory: std::path::PathBuf,
   sideopt: bool,
-  orientation: usize,
+  ops: Mutex<Option<(String, imagepipe::PipelineOps)>>,
 }
 
 impl<'a> Chimper<'a> {
@@ -54,7 +54,7 @@ impl<'a> Chimper<'a> {
       file: None,
       directory: env::current_dir().unwrap(),
       sideopt: true,
-      orientation: 0,
+      ops: Mutex::new(None),
     }
   }
 }
@@ -82,95 +82,116 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
     let mut needs_update = false;
     // While we're drawing the UI the request mutex is ours
     let mut imap = self.imap.lock().unwrap();
+    let mut currops = self.ops.lock().unwrap();
     let ui = &mut ui.set_widgets();
 
-    let ids = match self.ids {
-      Some(ref ids) => ids,
-      None => unreachable!(),
+    if let Some(ref file) = self.file {
+      let opsfile = match *currops {
+        Some((ref f, _)) => Some(f.clone()),
+        None => None,
+      };
+
+      if let Some(opsfile) = opsfile {
+        if &opsfile != file {
+          // We already had ops but they're for an old file, try and get new ones and if it fails
+          // set empty
+          *currops = if let ImageState::Loaded{ref request, ..} = *imap {
+            if let Some(ref ops) = request.ops {
+              if &(request.file) == file {
+                // We swap our ops for the new file
+                Some((file.clone(), ops.clone()))
+              } else { None }
+            } else { None }
+          } else { None };
+        }
+      } else {
+        // Try and get ops for this new file, if that fails it's already empty
+        if let ImageState::Loaded{ref request, ..} = *imap {
+          if let Some(ref ops) = request.ops {
+            if &(request.file) == file {
+              *currops = Some((file.clone(), ops.clone()));
+            }
+          }
+        }
+      }
+    } else {
+      // We don't have a file so we should't have ops either
+      *currops = None;
+    }
+
+    let mut ops = if let Some((_, ref ops)) = *currops {
+      Some(ops.clone())
+    } else {
+      None
+    };
+    let size = chimper::cache::smallest_size(ui.win_w as usize, ui.win_h as usize);
+
+    let (new_state, image) = match self.file {
+      None => (None, None),
+      Some(ref file) => {
+        let new_request = RequestedImage {
+          file: (*file).clone(),
+          size: size,
+          ops: ops.clone(),
+        };
+        match *imap {
+          ImageState::NoneSelected => {
+            (Some(ImageState::Requested {request: new_request, current: None}), None)
+          },
+          ImageState::Requested{ref request, ref current} => {
+            if new_request != *request {
+              (Some(ImageState::Requested{request: new_request, current: current.clone()}), current.clone())
+            } else {
+              (None, current.clone())
+            }
+          },
+          ImageState::Loaded{ref request, ref current} => {
+            if new_request != *request {
+              (Some(ImageState::Requested{request: new_request, current: Some(current.clone())}), Some(current.clone()))
+            } else {
+              (None, Some(current.clone()))
+            }
+          },
+        }
+      }
     };
 
+    // Now that we have our state in order and our requests out of the day lets draw ou UI and
+    // process any events
+    let ids = match self.ids {
+      Some(ref ids) => ids,
+      None => {unreachable!()},
+    };
     let sidewidth = self.sidewidth * ((self.use_sidepane as u8) as f64);
     let dragwidth = self.dragwidth * ((self.use_sidepane as u8) as f64);
-    {
-      // Construct our main `Canvas` tree.
-      widget::Canvas::new().flow_right(&[
-        (ids.imgcanvas, widget::Canvas::new().color(color::CHARCOAL).border(0.0)),
-        (ids.dragcanvas, widget::Canvas::new().length(dragwidth).color(color::BLACK).border(0.0)),
-        (ids.setcanvas, widget::Canvas::new().length(sidewidth).border(0.0).flow_down(&[
-          (ids.settop, widget::Canvas::new().color(color::GREY).length(100.0).border(0.0)),
-          (ids.setcont, widget::Canvas::new().color(color::GREY).border(0.0)),
-        ])),
-      ]).border(0.0).set(ids.background, ui);
+    // Construct our main `Canvas` tree.
+    widget::Canvas::new().flow_right(&[
+      (ids.imgcanvas, widget::Canvas::new().color(color::CHARCOAL).border(0.0)),
+      (ids.dragcanvas, widget::Canvas::new().length(dragwidth).color(color::BLACK).border(0.0)),
+      (ids.setcanvas, widget::Canvas::new().length(sidewidth).border(0.0).flow_down(&[
+        (ids.settop, widget::Canvas::new().color(color::GREY).length(100.0).border(0.0)),
+        (ids.setcont, widget::Canvas::new().color(color::GREY).border(0.0)),
+      ])),
+    ]).border(0.0).set(ids.background, ui);
 
-      let size = chimper::cache::smallest_size(ui.win_w as usize, ui.win_h as usize);
-      let ops = match *imap {
-        ImageState::NoneSelected => None,
-        ImageState::Requested{ref request, ..} |
-        ImageState::Loaded{ref request, ..} => {
-          if Some(request.file.clone()) == self.file {
-            request.ops.clone()
-          } else {
-            None
-          }
-        },
-      };
-
-      let ops = if let Some(mut ops) = ops {
-        ops.transform.orientation = imagepipe::Orientation::from_u16(self.orientation as u16);
-        Some(ops)
+    if let Some(image) = image {
+      let scale = (image.width as f64)/(image.height as f64);
+      let mut width = (ui.w_of(ids.imgcanvas).unwrap() - self.imagepadding).min(image.width as f64);
+      let mut height = (ui.h_of(ids.imgcanvas).unwrap() - self.imagepadding).min(image.height as f64);
+      if width/height > scale {
+        width = height * scale;
       } else {
-        None
-      };
-
-      let (new_state, image) = match self.file {
-        None => (None, None),
-        Some(ref file) => {
-          let new_request = RequestedImage {
-            file: (*file).clone(),
-            size: size,
-            ops,
-          };
-          match *imap {
-            ImageState::NoneSelected => {
-              (Some(ImageState::Requested {request: new_request, current: None}), None)
-            },
-            ImageState::Requested{ref request, ref current} => {
-              if new_request != *request {
-                (Some(ImageState::Requested{request: new_request, current: current.clone()}), current.clone())
-              } else {
-                (None, current.clone())
-              }
-            },
-            ImageState::Loaded{ref request, ref current} => {
-              if new_request != *request {
-                (Some(ImageState::Requested{request: new_request, current: Some(current.clone())}), Some(current.clone()))
-              } else {
-                (None, Some(current.clone()))
-              }
-            },
-          }
-        }
-      };
-
-      if let Some(image) = image {
-        let scale = (image.width as f64)/(image.height as f64);
-        let mut width = (ui.w_of(ids.imgcanvas).unwrap() - self.imagepadding).min(image.width as f64);
-        let mut height = (ui.h_of(ids.imgcanvas).unwrap() - self.imagepadding).min(image.height as f64);
-        if width/height > scale {
-          width = height * scale;
-        } else {
-          height = width / scale;
-        }
-        widget::Image::new(image.id)
-          .w_h(width, height)
-          .middle_of(ids.imgcanvas)
-          .set(ids.raw_image, ui);
+        height = width / scale;
       }
+      widget::Image::new(image.id)
+        .w_h(width, height)
+        .middle_of(ids.imgcanvas)
+        .set(ids.raw_image, ui);
+    }
 
-      if let Some(new_state) = new_state {
-        *imap = new_state;
-        evproxy.wakeup().is_ok();
-      }
+    if let Some(new_state) = new_state {
+      *imap = new_state;
+      evproxy.wakeup().is_ok();
     }
 
     if sidewidth > 0.0 {
@@ -207,16 +228,30 @@ impl<'a> chimper::window::ChimperApp for Chimper<'a> {
           }
         }
       } else {
-        for event in widget::drop_down_list::DropDownList::new(&ORIENTATION_NAMES, Some(self.orientation))
+        let orientation = if let Some(ref ops) = ops {
+          ops.transform.orientation.to_u16() as usize
+        } else {
+          0
+        };
+
+        for event in widget::drop_down_list::DropDownList::new(&ORIENTATION_NAMES, Some(orientation))
           .w_h(130.0, 30.0)
           .top_left_with_margin_on(ids.setcont, 6.0)
           .set(ids.dropdown, ui)
         {
-          self.orientation = event;
-          needs_update = true;
+          if let Some(ref mut ops) = ops {
+            ops.transform.orientation = imagepipe::Orientation::from_u16(event as u16);
+            needs_update = true;
+          };
         }
       }
     }
+
+    *currops = if let Some((ref opsfile, _)) = *currops {
+      Some((opsfile.clone(), ops.unwrap()))
+    } else {
+      None
+    };
 
     needs_update
   }

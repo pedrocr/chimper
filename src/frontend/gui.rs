@@ -85,21 +85,16 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod::Ui) -> bool {
         }
       }
     } else {
-      let orientation = if let Some((_, ref ops)) = *ops {
-        ops.transform.orientation.to_u16() as usize
-      } else {
-        0
-      };
-
-      for event in widget::drop_down_list::DropDownList::new(&ORIENTATION_NAMES, Some(orientation))
-        .w_h(130.0, 30.0)
-        .top_left_with_margin_on(ids.setcont, 6.0)
-        .set(ids.dropdown, ui)
-      {
-        if let Some((_, ref mut ops)) = *ops {
+      if let Some((_, ref mut ops)) = *ops {
+        let orientation = ops.transform.orientation.to_u16() as usize;
+        for event in widget::drop_down_list::DropDownList::new(&ORIENTATION_NAMES, Some(orientation))
+          .w_h(130.0, 30.0)
+          .top_left_with_margin_on(ids.setcont, 6.0)
+          .set(ids.dropdown, ui)
+        {
           ops.transform.orientation = imagepipe::Orientation::from_u16(event as u16);
           needs_update = true;
-        };
+        }
       }
     }
   }

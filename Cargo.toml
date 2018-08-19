@@ -20,7 +20,7 @@ features = ["glium", "winit"]
 
 [dependencies.imagepipe]
 version = "0.2.0"
-#path = "../imagepipe"
+path = "./imagepipe"
 
 [profile.release]
 panic = "unwind"

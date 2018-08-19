@@ -6,6 +6,9 @@ rust:
 matrix:
   allow_failures:
     - rust: nightly
+before_script:
+  - git clone https://github.com/pedrocr/imagepipe.git
+  - git clone https://github.com/pedrocr/rawloader.git imagepipe/rawloader/
 notifications:
   email:
     recipients:

@@ -54,7 +54,8 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) -> bool {
             .border(0.0)
             .top_left_with_margins_on(ids.setcont, voffset, 0.0)
             .set(ids.ops_settings[numop], ui);
-          let (nupdate, vsize) = $module::draw_gui(ids, ui, ops, ids.ops_settings[numop]);
+          let contid = ids.ops_settings[numop].clone();
+          let (nupdate, vsize) = $module::draw_gui(ids, ui, ops, contid);
           needs_update = nupdate || needs_update;
           voffset += vsize;
         }

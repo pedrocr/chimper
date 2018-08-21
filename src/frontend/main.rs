@@ -13,9 +13,10 @@ use backend::cache::RequestedImage;
 
 widget_ids!(
 pub struct ChimperIds {
-  background, imgcanvas, dragcanvas, setcanvas, settop, setcont, raw_image, chimper, filenav, dropdown,
+  background, imgcanvas, dragcanvas, setcanvas, settop, setcont, raw_image, chimper, filenav,
   ops_settings[],
   ops_headers[],
+  op_transform[],
 });
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

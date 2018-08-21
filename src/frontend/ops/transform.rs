@@ -1,6 +1,7 @@
 use frontend::ops::*;
 
-static ORIENTATION_NAMES: [&str; 8] = [
+static ORIENTATION_NAMES: [&str; 9] = [
+  "Unknown",
   "Normal",
   "HorizontalFlip",
   "Rotate180",

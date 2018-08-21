@@ -13,8 +13,26 @@ use backend::cache::RequestedImage;
 
 widget_ids!(
 pub struct ChimperIds {
-  background, imgcanvas, dragcanvas, setcanvas, settop, setcont, raw_image, chimper, filenav, dropdown
+  background, imgcanvas, dragcanvas, setcanvas, settop, setcont, raw_image, chimper, filenav, dropdown, oplist,
+
+  op_gofloat,   op_gofloat_header,   op_gofloat_title,
+  op_demosaic,  op_demosaic_header,  op_demosaic_title,
+  op_level,     op_level_header,     op_level_title,
+  op_tolab,     op_tolab_header,     op_tolab_title,
+  op_basecurve, op_basecurve_header, op_basecurve_title,
+  op_transform, op_transform_header, op_transform_title,
 });
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum SelectedOp {
+  None,
+  GoFloat,
+  Demosaic,
+  Level,
+  ToLab,
+  Basecurve,
+  Transform,
+}
 
 pub struct Chimper<'a> {
   pub dragwidth: f64,
@@ -28,6 +46,7 @@ pub struct Chimper<'a> {
   pub file: Option<String>,
   pub image: Option<DisplayableImage>,
   pub ops: Mutex<Option<(String, imagepipe::PipelineOps)>>,
+  pub selected_op: SelectedOp,
 
   imap: &'a Mutex<ImageState>,
 }
@@ -47,6 +66,7 @@ impl<'a> Chimper<'a> {
       sideopt: true,
       ops: Mutex::new(None),
       image: None,
+      selected_op: SelectedOp::None,
     }
   }
 }

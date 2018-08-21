@@ -16,22 +16,28 @@ mod transform;
 pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) -> bool {
   let mut needs_update = false;
   let mut ops = chimper.ops.lock().unwrap();
-    let ids = match chimper.ids {
-    Some(ref ids) => ids,
+  let ids = match chimper.ids {
+    Some(ref mut ids) => ids,
     None => {unreachable!()},
   };
 
   if let Some((_, ref mut ops)) = *ops {
     let mut voffset = 0.0;
+    let mut numop = 0;
 
     macro_rules! draw_op {
-      ($name:expr, $module:ident, $selected:expr, $idheader:expr, $idbutton:expr, $idcontent:expr) => {
+      ($name:expr, $module:ident, $selected:expr) => {
+        if ids.ops_headers.len() < numop + 1 {
+          ids.ops_headers.resize(numop+1, &mut ui.widget_id_generator());
+          ids.ops_settings.resize(numop+1, &mut ui.widget_id_generator());
+        }
+
         for _ in widget::Button::new()
           .label($name)
           .w_of(ids.setcont)
           .h(30.0)
           .top_left_with_margins_on(ids.setcont, voffset, 0.0)
-          .set($idbutton, ui)
+          .set(ids.ops_headers[numop], ui)
         {
           if chimper.selected_op == $selected {
             chimper.selected_op = SelectedOp::None;
@@ -47,22 +53,24 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) -> bool {
             .color(color::GREY)
             .border(0.0)
             .top_left_with_margins_on(ids.setcont, voffset, 0.0)
-            .set($idcontent, ui);
-          let (nupdate, vsize) = $module::draw_gui(ids, ui, ops);
-          needs_update =  nupdate || needs_update;
+            .set(ids.ops_settings[numop], ui);
+          let (nupdate, vsize) = $module::draw_gui(ids, ui, ops, ids.ops_settings[numop]);
+          needs_update = nupdate || needs_update;
           voffset += vsize;
         }
+        numop += 1;
       };
     }
 
-    draw_op!("input", gofloat, SelectedOp::GoFloat, ids.op_gofloat_header, ids.op_gofloat_title, ids.op_gofloat);
-    draw_op!("demosaic", demosaic, SelectedOp::Demosaic, ids.op_demosaic_header, ids.op_demosaic_title, ids.op_demosaic);
-    draw_op!("levels", level, SelectedOp::Level, ids.op_level_header, ids.op_level_title, ids.op_level);
-    draw_op!("colorspace", tolab, SelectedOp::ToLab, ids.op_tolab_header, ids.op_tolab_title, ids.op_tolab);
-    draw_op!("basecurve", basecurve, SelectedOp::Basecurve, ids.op_basecurve_header, ids.op_basecurve_title, ids.op_basecurve);
-    draw_op!("transform", transform, SelectedOp::Transform, ids.op_transform_header, ids.op_transform_title, ids.op_transform);
+    draw_op!("input",      gofloat,   SelectedOp::GoFloat);
+    draw_op!("demosaic",   demosaic,  SelectedOp::Demosaic);
+    draw_op!("levels",     level,     SelectedOp::Level);
+    draw_op!("colorspace", tolab,     SelectedOp::ToLab);
+    draw_op!("basecurve",  basecurve, SelectedOp::Basecurve);
+    draw_op!("transform",  transform, SelectedOp::Transform);
 
     assert!(voffset < 1000.0); // shut up the compiler about the last assignment never being read
+    assert!(numop < 1000); // shut up the compiler about the last assignment never being read
   }
 
   needs_update

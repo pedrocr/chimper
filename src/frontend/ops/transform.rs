@@ -11,7 +11,7 @@ static ORIENTATION_NAMES: [&str; 8] = [
   "Rotate270",
 ];
 
-pub fn draw_gui(ids: &ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps) -> bool {
+pub fn draw_gui(ids: &ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps) -> (bool, f64) {
   let mut needs_update = false;
 
   let orientation = ops.transform.orientation.to_u16() as usize;
@@ -24,5 +24,5 @@ pub fn draw_gui(ids: &ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps) -> boo
     needs_update = true;
   }
 
-  needs_update
+  (needs_update, 100.0)
 }

@@ -12,7 +12,6 @@ categories = ["multimedia::images"]
 image = "0.19"
 rand = "0.5"
 crossbeam-utils = "0.5"
-multicache = "0.5"
 
 [dependencies.conrod]
 version = "0.61"
@@ -21,6 +20,10 @@ features = ["glium", "winit"]
 [dependencies.imagepipe]
 version = "0.2.0"
 path = "./imagepipe"
+
+[dependencies.multicache]
+version = "0.5.0"
+path = "./imagepipe/multicache"
 
 [profile.release]
 panic = "unwind"

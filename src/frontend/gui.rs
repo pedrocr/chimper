@@ -17,9 +17,17 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod::Ui) -> bool {
       None => {unreachable!()},
     };
 
+
+    // Adjust settings for fullscreen images
+    let (img_bgcolor, img_padding) = if *(chimper.fullscreen.lock().unwrap()) && !chimper.use_sidepane {
+      (color::BLACK, 0.0)
+    } else {
+      (color::CHARCOAL, chimper.imagepadding)
+    };
+
     // Construct our main `Canvas` tree.
     widget::Canvas::new().flow_right(&[
-      (ids.imgcanvas, widget::Canvas::new().color(color::CHARCOAL).border(0.0)),
+      (ids.imgcanvas, widget::Canvas::new().color(img_bgcolor).border(0.0)),
       (ids.dragcanvas, widget::Canvas::new().length(dragwidth).color(color::BLACK).border(0.0)),
       (ids.setcanvas, widget::Canvas::new().length(sidewidth).border(0.0).flow_down(&[
         (ids.settop, widget::Canvas::new().color(color::GREY).length(100.0).border(0.0)),
@@ -29,8 +37,8 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod::Ui) -> bool {
 
     if let Some(ref image) = chimper.image {
       let scale = (image.width as f64)/(image.height as f64);
-      let mut width = (ui.w_of(ids.imgcanvas).unwrap() - chimper.imagepadding).min(image.width as f64);
-      let mut height = (ui.h_of(ids.imgcanvas).unwrap() - chimper.imagepadding).min(image.height as f64);
+      let mut width = (ui.w_of(ids.imgcanvas).unwrap() - img_padding).min(image.width as f64);
+      let mut height = (ui.h_of(ids.imgcanvas).unwrap() - img_padding).min(image.height as f64);
       if width/height > scale {
         width = height * scale;
       } else {

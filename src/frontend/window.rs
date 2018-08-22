@@ -119,7 +119,7 @@ impl ChimperWindow {
                 &mut conrod::backend::glium::Renderer,
                 &mut conrod::image::Map<SrgbTexture2d>, 
                 glium::glutin::EventsLoopProxy,
-                u64) -> bool {
+                u64, bool) -> bool {
 
     crossbeam_utils::thread::scope(|scope| {
       // A channel to send events from the main `winit` thread to the conrod thread.
@@ -196,7 +196,7 @@ impl ChimperWindow {
         });
 
         // Run any app specific code and then redraw in case things have changed
-        if closure(display, renderer, image_map, evproxy, frame_count) {
+        if closure(display, renderer, image_map, evproxy, frame_count, fullscreen) {
           event_tx.send(conrod::event::Input::Redraw).unwrap();
         }
 

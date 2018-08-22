@@ -43,12 +43,13 @@ pub struct Chimper<'a> {
   pub image: Option<DisplayableImage>,
   pub ops: Mutex<Option<(String, imagepipe::PipelineOps)>>,
   pub selected_op: SelectedOp,
+  pub fullscreen: &'a Mutex<bool>,
 
   imap: &'a Mutex<ImageState>,
 }
 
 impl<'a> Chimper<'a> {
-  fn new(logoid: conrod::image::Id, imap: &'a Mutex<ImageState>,) -> Self {
+  fn new(logoid: conrod::image::Id, imap: &'a Mutex<ImageState>, fullscreen: &'a Mutex<bool>) -> Self {
     Self {
       dragwidth: 5.0,
       sidewidth: 600.0,
@@ -63,6 +64,7 @@ impl<'a> Chimper<'a> {
       ops: Mutex::new(None),
       image: None,
       selected_op: SelectedOp::None,
+      fullscreen,
     }
   }
 }
@@ -192,13 +194,18 @@ pub fn run_app() {
 
   let icache = cache::ImageCache::new();
   let imap = Mutex::new(ImageState::NoneSelected);
+  let fullscreen = Mutex::new(false);
   let oldids: Mutex<Vec<(conrod::image::Id, u64)>> = Mutex::new(Vec::new());
   let oldsref = &oldids;
 
   crossbeam_utils::thread::scope(|scope| {
-    let mut chimp = Chimper::new(logoid, &imap);
+    let mut chimp = Chimper::new(logoid, &imap, &fullscreen);
 
-    window.run(&mut chimp, |display, _rederer, image_map, evproxy, frame_count| {
+    window.run(&mut chimp, |display, _rederer, image_map, evproxy, frame_count, fs| {
+      {
+        *(fullscreen.lock().unwrap()) = fs;
+      }
+
       // Remove old images if we're already displaying a following frame and thus there are no
       // more remaining references to them
       let mut oldids = oldsref.lock().unwrap();

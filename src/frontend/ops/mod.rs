@@ -63,8 +63,8 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) -> bool {
       };
     }
 
-    draw_op!("input",      gofloat,   SelectedOp::GoFloat);
-    draw_op!("demosaic",   demosaic,  SelectedOp::Demosaic);
+    draw_op!("RAW input",      gofloat,   SelectedOp::GoFloat);
+    draw_op!("RAW demosaic",   demosaic,  SelectedOp::Demosaic);
     draw_op!("levels",     level,     SelectedOp::Level);
     draw_op!("colorspace", tolab,     SelectedOp::ToLab);
     draw_op!("basecurve",  basecurve, SelectedOp::Basecurve);

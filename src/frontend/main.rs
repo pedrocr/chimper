@@ -4,6 +4,7 @@ use conrod::backend::glium::glium;
 use std;
 use std::env;
 use std::sync::Mutex;
+use std::path::PathBuf;
 extern crate crossbeam_utils;
 extern crate image;
 
@@ -50,7 +51,20 @@ pub struct Chimper<'a> {
 }
 
 impl<'a> Chimper<'a> {
-  fn new(logoid: conrod::image::Id, imap: &'a Mutex<ImageState>, fullscreen: &'a Mutex<bool>) -> Self {
+  fn new(logoid: conrod::image::Id, imap: &'a Mutex<ImageState>, fullscreen: &'a Mutex<bool>, path: Option<PathBuf>) -> Self {
+
+    let (file, directory, sideopt) = if let Some(path) = path {
+      if path.is_file() {
+        let file = path.to_str().unwrap().to_string();
+        let directory = path.parent().unwrap().to_owned();
+        (Some(file), directory, false)
+      } else {
+        (None, path, true)
+      }
+    } else {
+      (None, env::current_dir().unwrap(), true)
+    };
+
     Self {
       dragwidth: 5.0,
       sidewidth: 600.0,
@@ -59,9 +73,9 @@ impl<'a> Chimper<'a> {
       logoid,
       ids: None,
       imap,
-      file: None,
-      directory: env::current_dir().unwrap(),
-      sideopt: true,
+      file,
+      directory,
+      sideopt,
       ops: Mutex::new(None),
       image: None,
       selected_op: SelectedOp::None,
@@ -189,7 +203,7 @@ impl<'a> window::ChimperApp for Chimper<'a> {
 }
 
 
-pub fn run_app() {
+pub fn run_app(path: Option<PathBuf>) {
   let mut window = window::ChimperWindow::new("Chimper", 1200, 800);
   let logoid = window.load_texture(load_image(logo::random()));
 
@@ -200,7 +214,7 @@ pub fn run_app() {
   let oldsref = &oldids;
 
   crossbeam_utils::thread::scope(|scope| {
-    let mut chimp = Chimper::new(logoid, &imap, &fullscreen);
+    let mut chimp = Chimper::new(logoid, &imap, &fullscreen, path);
 
     window.run(&mut chimp, |display, _rederer, image_map, evproxy, frame_count, fs| {
       {

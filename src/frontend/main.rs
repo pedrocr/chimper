@@ -19,6 +19,7 @@ pub struct ChimperIds {
 
   op_transform[],
   op_gofloat[],
+  op_demosaic[],
 });
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

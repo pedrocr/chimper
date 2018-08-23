@@ -6,8 +6,7 @@ pub use self::imagepipe::PipelineOps;
 
 use frontend::main::*;
 
-mod gofloat;
-mod demosaic;
+mod rawinput;
 mod level;
 mod tolab;
 mod basecurve;
@@ -63,8 +62,7 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) -> bool {
       };
     }
 
-    draw_op!("RAW input",      gofloat,   SelectedOp::GoFloat);
-    draw_op!("RAW demosaic",   demosaic,  SelectedOp::Demosaic);
+    draw_op!("raw input",  rawinput,  SelectedOp::RawInput);
     draw_op!("levels",     level,     SelectedOp::Level);
     draw_op!("colorspace", tolab,     SelectedOp::ToLab);
     draw_op!("basecurve",  basecurve, SelectedOp::Basecurve);

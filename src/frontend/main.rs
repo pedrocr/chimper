@@ -17,16 +17,14 @@ pub struct ChimperIds {
   ops_settings[],
   ops_headers[],
 
+  op_rawinput[],
   op_transform[],
-  op_gofloat[],
-  op_demosaic[],
 });
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum SelectedOp {
   None,
-  GoFloat,
-  Demosaic,
+  RawInput,
   Level,
   ToLab,
   Basecurve,

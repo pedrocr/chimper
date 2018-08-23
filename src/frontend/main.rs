@@ -16,7 +16,9 @@ pub struct ChimperIds {
   background, imgcanvas, dragcanvas, setcanvas, settop, setcont, raw_image, chimper, filenav,
   ops_settings[],
   ops_headers[],
+
   op_transform[],
+  op_gofloat[],
 });
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

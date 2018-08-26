@@ -126,33 +126,16 @@ pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id
   left_label!("Bottom");
   textbox_num_input!(150.0, ops.gofloat.crop_bottom, usize);
 
-  macro_rules! slider_input {
-    ($xpos:expr, $value:expr, $min:expr, $max:expr, $typ:ty) => {
-      for event in widget::slider::Slider::new($value, $min, $max)
-        .w_h(170.0, 30.0)
-        .top_left_with_margins_on(id, voffset, $xpos)
-        .set(new_widget!(), ui)
-      {
-        $value = event;
-        needs_update = true;
-      }
-    };
-  }
-
   voffset += 36.0 * 1.5;
   divider_label!("Levels");
   voffset += 36.0 * 1.5;
   label!(80.0,  150.0, "Min", Justify::Center);
-  label!(20.0,  250.0, "0", Justify::Left);
-  label!(170.0, 250.0, "Multiplier", Justify::Center);
-  label!(20.0,  400.0, "4", Justify::Right);
-  label!(80.0,  440.0, "Max", Justify::Center);
+  label!(80.0,  250.0, "Max", Justify::Center);
   macro_rules! range_widget {
     ($name:expr, $idx:expr) => {
       left_label!($name);
-      textbox_num_input!(150.0, ops.level.blacklevels[$idx], f32);
-      slider_input!(250.0, ops.level.wb_coeffs[$idx], 0.0, 4.0, f32);
-      textbox_num_input!(440.0, ops.level.whitelevels[$idx], f32);
+      textbox_num_input!(150.0, ops.gofloat.blacklevels[$idx], f32);
+      textbox_num_input!(250.0, ops.gofloat.whitelevels[$idx], f32);
 
       voffset += 36.0;
     };

@@ -9,7 +9,6 @@ pub use self::imagepipe::PipelineOps;
 use frontend::main::*;
 
 mod rawinput;
-mod level;
 mod tolab;
 mod basecurve;
 mod transform;
@@ -65,7 +64,6 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) -> bool {
     }
 
     draw_op!("raw input",  rawinput,  SelectedOp::RawInput);
-    draw_op!("levels",     level,     SelectedOp::Level);
     draw_op!("colorspace", tolab,     SelectedOp::ToLab);
     draw_op!("basecurve",  basecurve, SelectedOp::Basecurve);
     draw_op!("transform",  transform, SelectedOp::Transform);

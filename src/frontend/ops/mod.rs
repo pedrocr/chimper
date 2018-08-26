@@ -1,6 +1,8 @@
 extern crate conrod;
 pub use conrod::{widget, color, Colorable, Borderable, UiCell, Positionable, Sizeable, Widget, Labelable};
 pub use conrod::widget::id::Id as WidgetId;
+use conrod::text::Justify;
+
 extern crate imagepipe;
 pub use self::imagepipe::PipelineOps;
 

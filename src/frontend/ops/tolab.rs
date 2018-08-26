@@ -43,7 +43,7 @@ pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id
   slider_input!("Temperature", temp, 1000.0, 30000.0);
   slider_input!("Tint", tint, 0.1, 2.5);
   if altered {
-    ops.tolab.set_temp(temp, tint);
+    ops.tolab.set_temp(temp.round(), (tint*1000.0).round() / 1000.0);
   }
   voffset += 36.0 *0.5;
 

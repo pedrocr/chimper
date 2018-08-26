@@ -19,6 +19,7 @@ pub struct ChimperIds {
   ops_headers[],
 
   op_rawinput[],
+  op_tolab[],
   op_transform[],
 });
 

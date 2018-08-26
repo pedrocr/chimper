@@ -8,9 +8,7 @@ static ORIENTATION_NAMES: [&str; 4] = [
   "Rotate 270",
 ];
 
-pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id: WidgetId) -> (bool, f64) {
-  let mut needs_update = false;
-
+pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id: WidgetId) -> f64 {
   ids.op_transform.resize(6, &mut ui.widget_id_generator());
   let id_toggle_h = ids.op_transform[0];
   let id_toggle_v = ids.op_transform[1];
@@ -31,7 +29,6 @@ pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id
     .set(id_toggle_h, ui)
   {
     ops.transform.fliph = event;
-    needs_update = true;
   }
 
   widget::primitive::text::Text::new("Flip Vertically")
@@ -46,7 +43,6 @@ pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id
     .set(id_toggle_v, ui)
   {
     ops.transform.flipv = event;
-    needs_update = true;
   }
 
   widget::primitive::text::Text::new("Orientation")
@@ -72,8 +68,7 @@ pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id
       3 => Rotation::Rotate270,
       _ => Rotation::Normal,
     };
-    needs_update = true;
   }
 
-  (needs_update, 114.0)
+  114.0
 }

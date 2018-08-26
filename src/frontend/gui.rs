@@ -6,7 +6,6 @@ use frontend::main::Chimper;
 use frontend::ops;
 
 pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod::Ui) -> bool {
-  let mut needs_update = false;
   let ui = &mut ui.set_widgets();
 
   let sidewidth = chimper.sidewidth * ((chimper.use_sidepane as u8) as f64);
@@ -76,7 +75,6 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod::Ui) -> bool {
                 if path.is_file() {
                   eprintln!("Loading file {:?}", path);
                   chimper.file = Some(path.to_str().unwrap().to_string());
-                  needs_update = true;
                 }
               }
             },
@@ -88,8 +86,8 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod::Ui) -> bool {
   }
 
   if sidewidth > 0.0 && !chimper.sideopt {
-    needs_update = ops::draw_gui(chimper, ui) || needs_update;
+    ops::draw_gui(chimper, ui);
   }
 
-  needs_update
+  false
 }

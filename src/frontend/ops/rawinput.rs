@@ -36,9 +36,7 @@ fn get_patnum(ops: &PipelineOps) -> Option<usize> {
   None
 }
 
-pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id: WidgetId) -> (bool, f64) {
-  let mut needs_update = false;
-
+pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id: WidgetId) -> f64 {
   let mut numids = 0;
   macro_rules! new_widget {
     () => {{
@@ -86,7 +84,6 @@ pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id
       ops.gofloat.is_cfa = true;
       ops.demosaic.cfa = get_pattern(event);
     }
-    needs_update = true;
   }
 
   macro_rules! textbox_num_input {
@@ -105,7 +102,6 @@ pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id
             $value = val;
           }
         }
-        needs_update = true;
       }
     };
   }
@@ -149,5 +145,5 @@ pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id
 
   voffset += 36.0 * 0.5;
 
-  (needs_update, voffset)
+  voffset
 }

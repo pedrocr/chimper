@@ -13,8 +13,7 @@ mod tolab;
 mod basecurve;
 mod transform;
 
-pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) -> bool {
-  let mut needs_update = false;
+pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) {
   let mut ops = chimper.ops.lock().unwrap();
   let ids = match chimper.ids {
     Some(ref mut ids) => ids,
@@ -55,9 +54,7 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) -> bool {
             .top_left_with_margins_on(ids.setcont, voffset, 0.0)
             .set(ids.ops_settings[numop], ui);
           let contid = ids.ops_settings[numop].clone();
-          let (nupdate, vsize) = $module::draw_gui(ids, ui, ops, contid);
-          needs_update = nupdate || needs_update;
-          voffset += vsize;
+          voffset += $module::draw_gui(ids, ui, ops, contid);
         }
         numop += 1;
       };
@@ -71,6 +68,4 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) -> bool {
     assert!(voffset < 1000.0); // shut up the compiler about the last assignment never being read
     assert!(numop < 1000); // shut up the compiler about the last assignment never being read
   }
-
-  needs_update
 }

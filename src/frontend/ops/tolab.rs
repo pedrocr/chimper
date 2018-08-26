@@ -27,23 +27,24 @@ pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id
   macro_rules! slider_input {
     ($name:expr, $value:expr, $min:expr, $max:expr) => {
       label!(140.0, 0.0, $name, Justify::Right);
-      for event in widget::slider::Slider::new($value, $min, $max)
-        .w_h(400.0, 30.0)
+      for event in widget::slider::Slider::new($value as f32, $min as f32, $max as f32)
+        .w_h(300.0, 30.0)
         .top_left_with_margins_on(id, voffset, 150.0)
         .set(new_widget!(), ui)
       {
-        $value = event;
+        $value = event as u32;
         altered = true;
       }
+      label!(100.0, 460.0, &($value.to_string()), Justify::Left);
       voffset += 36.0;
     };
   }
 
   let (mut temp, mut tint) = ops.tolab.get_temp();
-  slider_input!("Temperature", temp, 1000.0, 30000.0);
-  slider_input!("Tint", tint, 0.1, 2.5);
+  slider_input!("Temperature", temp, 1000, 25000);
+  slider_input!("Tint", tint, 1000, 25000);
   if altered {
-    ops.tolab.set_temp(temp.round(), (tint*1000.0).round() / 1000.0);
+    ops.tolab.set_temp(temp, tint);
   }
   voffset += 36.0 *0.5;
 

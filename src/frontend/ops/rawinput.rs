@@ -43,7 +43,9 @@ pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id
   macro_rules! new_widget {
     () => {{
       numids += 1;
-      ids.op_rawinput.resize(numids, &mut ui.widget_id_generator());
+      if ids.op_rawinput.len() < numids {
+        ids.op_rawinput.resize(numids, &mut ui.widget_id_generator());
+      }
       ids.op_rawinput[numids-1]
     }}
   }

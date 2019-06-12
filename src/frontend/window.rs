@@ -130,7 +130,7 @@ impl ChimperWindow {
       let evproxy = self.evloop.create_proxy();
       let w = self.initial_width;
       let h = self.initial_height;
-      scope.spawn(move ||Self::run_conrod(event_rx, render_tx, evproxy, app, w, h));
+      scope.spawn(move |_|Self::run_conrod(event_rx, render_tx, evproxy, app, w, h));
 
       // Run the `winit` loop.
       let mut last_update = std::time::Instant::now();
@@ -211,7 +211,7 @@ impl ChimperWindow {
 
       // Make sure the conrod thread terminates so the app exits
       drop(event_tx);
-    });
+    }).unwrap();
   }
 
   fn load_font(buf: &'static [u8]) -> Font {

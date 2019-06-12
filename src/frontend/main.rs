@@ -284,7 +284,7 @@ pub fn run_app(path: Option<PathBuf>) {
       }
       needs_redraw
     });
-  });
+  }).unwrap();
 }
 
 // Load the image from a file

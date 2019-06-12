@@ -62,7 +62,7 @@ impl ImageCache {
     let maxwidth = SIZES[req.size][0];
     let maxheight = SIZES[req.size][1];
 
-    scope.spawn(move || {
+    scope.spawn(move |_| {
       eprintln!("processing {}", req.file);
 
       let mut pipeline = match imagepipe::Pipeline::new_from_file(&req.file, maxwidth, maxheight, false) {

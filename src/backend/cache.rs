@@ -5,7 +5,7 @@ extern crate multicache;
 use self::multicache::MultiCache;
 use std::sync::Arc;
 use self::imagepipe::SRGBImage;
-use conrod::backend::glium::glium;
+extern crate glium;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RequestedImage {

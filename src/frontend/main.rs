@@ -1,6 +1,6 @@
 extern crate imagepipe;
-extern crate conrod;
-use conrod::backend::glium::glium;
+extern crate conrod_core;
+extern crate glium;
 use std;
 use std::env;
 use std::sync::Mutex;
@@ -38,7 +38,7 @@ pub struct Chimper<'a> {
   pub sidewidth: f64,
   pub imagepadding: f64,
   pub use_sidepane: bool,
-  pub logoid: conrod::image::Id,
+  pub logoid: conrod_core::image::Id,
   pub ids: Option<ChimperIds>,
   pub sideopt: bool,
   pub directory: std::path::PathBuf,
@@ -52,7 +52,7 @@ pub struct Chimper<'a> {
 }
 
 impl<'a> Chimper<'a> {
-  fn new(logoid: conrod::image::Id, imap: &'a Mutex<ImageState>, fullscreen: &'a Mutex<bool>, path: Option<PathBuf>) -> Self {
+  fn new(logoid: conrod_core::image::Id, imap: &'a Mutex<ImageState>, fullscreen: &'a Mutex<bool>, path: Option<PathBuf>) -> Self {
 
     let (file, directory, sideopt) = if let Some(path) = path {
       if path.is_file() {
@@ -87,7 +87,7 @@ impl<'a> Chimper<'a> {
 
 #[derive(Debug, Clone)]
 pub struct DisplayableImage {
-  pub id: conrod::image::Id,
+  pub id: conrod_core::image::Id,
   pub width: u32,
   pub height: u32,
 }
@@ -100,11 +100,11 @@ enum ImageState {
 }
 
 impl<'a> window::ChimperApp for Chimper<'a> {
-  fn initialize(&mut self, ui: &mut conrod::Ui) {
+  fn initialize(&mut self, ui: &mut conrod_core::Ui) {
     self.ids = Some(ChimperIds::new(ui.widget_id_generator()));
   }
 
-  fn draw_gui(&mut self, ui: &mut conrod::Ui, evproxy: &glium::glutin::EventsLoopProxy) -> bool {
+  fn draw_gui(&mut self, ui: &mut conrod_core::Ui, evproxy: &glium::glutin::EventsLoopProxy) -> bool {
     {
       // While we're drawing the UI the request mutex is ours
       let mut imap = self.imap.lock().unwrap();
@@ -193,9 +193,9 @@ impl<'a> window::ChimperApp for Chimper<'a> {
     gui::draw_gui(self, ui)
   }
 
-  fn process_event(&mut self, event: &conrod::event::Input) {
+  fn process_event(&mut self, event: &conrod_core::event::Input) {
     match *event {
-      conrod::event::Input::Press(conrod::input::Button::Keyboard(conrod::input::Key::Tab)) => {
+      conrod_core::event::Input::Press(conrod_core::input::Button::Keyboard(conrod_core::input::Key::Tab)) => {
         self.use_sidepane = !self.use_sidepane;
       },
       _ => (),
@@ -211,7 +211,7 @@ pub fn run_app(path: Option<PathBuf>) {
   let icache = cache::ImageCache::new();
   let imap = Mutex::new(ImageState::NoneSelected);
   let fullscreen = Mutex::new(false);
-  let oldids: Mutex<Vec<(conrod::image::Id, u64)>> = Mutex::new(Vec::new());
+  let oldids: Mutex<Vec<(conrod_core::image::Id, u64)>> = Mutex::new(Vec::new());
   let oldsref = &oldids;
 
   crossbeam_utils::thread::scope(|scope| {

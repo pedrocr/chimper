@@ -1,11 +1,11 @@
-extern crate conrod;
-use conrod::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, color};
+extern crate conrod_core;
+use conrod_core::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, color};
 extern crate imagepipe;
 
 use frontend::main::Chimper;
 use frontend::ops;
 
-pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod::Ui) -> bool {
+pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod_core::Ui) -> bool {
   let ui = &mut ui.set_widgets();
 
   let sidewidth = chimper.sidewidth * ((chimper.use_sidepane as u8) as f64);
@@ -61,7 +61,7 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod::Ui) -> bool {
       if chimper.sideopt {
         let directory = chimper.directory.as_path();
         for event in widget::FileNavigator::all(&directory)
-          .color(conrod::color::LIGHT_BLUE)
+          .color(conrod_core::color::LIGHT_BLUE)
           .font_size(16)
           .kid_area_wh_of(ids.setcont)
           .middle_of(ids.setcont)
@@ -69,7 +69,7 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod::Ui) -> bool {
           .set(ids.filenav, ui)
         {
           match event {
-            conrod::widget::file_navigator::Event::ChangeSelection(pbuf) => {
+            conrod_core::widget::file_navigator::Event::ChangeSelection(pbuf) => {
               if pbuf.len() > 0 {
                 let path = pbuf[0].as_path();
                 if path.is_file() {

@@ -12,11 +12,11 @@ categories = ["multimedia::images"]
 image = "0.21"
 rand = "0.6"
 crossbeam-utils = "0.6"
-conrod_core = "0.65"
-conrod_glium = "0.65"
-conrod_winit = "0.65"
-glium = "0.23"
-winit = "0.18"
+conrod_core = "0.66"
+conrod_glium = "0.66"
+conrod_winit = "0.66"
+glium = "0.24"
+winit = "0.19"
 
 [dependencies.imagepipe]
 version = "0.2.0"

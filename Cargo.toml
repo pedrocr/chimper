@@ -19,11 +19,11 @@ glium = "0.24"
 winit = "0.19"
 
 [dependencies.imagepipe]
-version = "0.2.0"
+version = "0.3.0"
 path = "./imagepipe"
 
 [dependencies.multicache]
-version = "0.5.0"
+version = "0.6.0"
 path = "./imagepipe/multicache"
 
 [profile.release]

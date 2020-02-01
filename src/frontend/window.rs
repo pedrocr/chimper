@@ -71,7 +71,7 @@ impl ChimperWindow {
   fn run_conrod(event_rx: std::sync::mpsc::Receiver<conrod_core::event::Input>,
                 render_tx: std::sync::mpsc::Sender<conrod_core::render::OwnedPrimitives>,
                 evproxy: glium::glutin::EventsLoopProxy,
-                app: &mut ChimperApp,
+                app: &mut dyn ChimperApp,
                 initial_width: u32, initial_height: u32) {
     // Construct our `Ui`.
     let mut ui = conrod_core::UiBuilder::new([initial_width as f64, initial_height as f64]).build();
@@ -131,7 +131,7 @@ impl ChimperWindow {
   }
 
 
-  pub fn run<F>(&mut self, app: &mut ChimperApp, closure: F)
+  pub fn run<F>(&mut self, app: &mut dyn ChimperApp, closure: F)
     where F: Fn(&mut glium::Display,
                 &mut conrod_glium::Renderer,
                 &mut conrod_core::image::Map<SrgbTexture2d>, 

@@ -184,7 +184,7 @@ impl<'a> window::ChimperApp for Chimper<'a> {
 
       if let Some(new_state) = new_state {
         *imap = new_state;
-        evproxy.wakeup().is_ok();
+        evproxy.wakeup().unwrap();
       }
     }
 

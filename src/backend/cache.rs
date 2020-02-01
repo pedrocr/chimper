@@ -85,7 +85,7 @@ impl ImageCache {
       let imgsize = decoded.width*decoded.height*3;
       let ops = pipeline.ops.clone();
       self.images.put(req.clone(), Some((decoded, ops)), imgsize);
-      evproxy.wakeup().is_ok();
+      evproxy.wakeup().unwrap();
     });
   }
 }

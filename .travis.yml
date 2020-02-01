@@ -10,6 +10,8 @@ before_script:
   - git clone https://github.com/pedrocr/imagepipe.git
   - git clone https://github.com/pedrocr/rawloader.git imagepipe/rawloader/
   - git clone https://github.com/pedrocr/multicache.git imagepipe/multicache/
+  - sudo apt-get update
+  - sudo apt-get -y install libxcb-shape0-dev libxcb-xfixes0-dev
 notifications:
   email:
     recipients:

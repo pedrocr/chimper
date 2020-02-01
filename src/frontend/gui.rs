@@ -2,8 +2,8 @@ extern crate conrod_core;
 use conrod_core::{widget, Colorable, Positionable, Sizeable, Borderable, Widget, color};
 extern crate imagepipe;
 
-use frontend::main::Chimper;
-use frontend::ops;
+use crate::frontend::main::Chimper;
+use crate::frontend::ops;
 
 pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod_core::Ui) -> bool {
   let ui = &mut ui.set_widgets();

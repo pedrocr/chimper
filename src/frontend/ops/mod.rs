@@ -6,7 +6,7 @@ use conrod_core::text::Justify;
 extern crate imagepipe;
 pub use self::imagepipe::PipelineOps;
 
-use frontend::main::*;
+use crate::frontend::main::*;
 
 mod rawinput;
 mod tolab;

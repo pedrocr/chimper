@@ -1,16 +1,16 @@
 extern crate imagepipe;
 extern crate conrod_core;
 extern crate glium;
-use std;
+
 use std::env;
 use std::sync::Mutex;
 use std::path::PathBuf;
 extern crate crossbeam_utils;
 extern crate image;
 
-use frontend::*;
-use backend::cache;
-use backend::cache::RequestedImage;
+use crate::frontend::*;
+use crate::backend::cache;
+use crate::backend::cache::RequestedImage;
 
 widget_ids!(
 pub struct ChimperIds {

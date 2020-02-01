@@ -1,4 +1,4 @@
-use frontend::ops::*;
+use crate::frontend::ops::*;
 
 static PATTERNS: [&str; 11] = [
   "Monochrome",

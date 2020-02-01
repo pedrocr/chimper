@@ -1,4 +1,4 @@
-use frontend::ops::*;
+use crate::frontend::ops::*;
 
 pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id: WidgetId) -> f64 {
   let mut numids = 0;

@@ -1,4 +1,4 @@
-use frontend::ops::*;
+use crate::frontend::ops::*;
 use self::imagepipe::Rotation;
 
 static ORIENTATION_NAMES: [&str; 4] = [

@@ -9,12 +9,12 @@ license = "GPL-3.0"
 categories = ["multimedia::images"]
 
 [dependencies]
-image = "0.21"
-rand = "0.6"
-crossbeam-utils = "0.6"
-conrod_core = "0.66"
-conrod_glium = "0.66"
-conrod_winit = "0.66"
+image = "0.22"
+rand = "0.7"
+crossbeam-utils = "0.7"
+conrod_core = "0.68"
+conrod_glium = "0.68"
+conrod_winit = "0.68"
 glium = "0.24"
 winit = "0.19"
 

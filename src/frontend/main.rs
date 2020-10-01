@@ -21,6 +21,7 @@ pub struct ChimperIds {
   op_rawinput[],
   op_tolab[],
   op_transform[],
+  op_basecurve[],
 });
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

@@ -129,7 +129,7 @@ dependencies = [
 
 [[package]]
 name = "chimper"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "conrod_core 0.70.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "conrod_glium 0.70.0 (registry+https://github.com/rust-lang/crates.io-index)",

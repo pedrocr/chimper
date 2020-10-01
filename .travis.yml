@@ -7,9 +7,9 @@ matrix:
   allow_failures:
     - rust: nightly
 before_script:
-  - git clone https://github.com/pedrocr/imagepipe.git
-  - git clone https://github.com/pedrocr/rawloader.git imagepipe/rawloader/
-  - git clone https://github.com/pedrocr/multicache.git imagepipe/multicache/
+  - git clone https://github.com/pedrocr/imagepipe.git ../imagepipe/
+  - git clone https://github.com/pedrocr/rawloader.git ../rawloader/
+  - git clone https://github.com/pedrocr/multicache.git ../multicache/
   - sudo apt-get update
   - sudo apt-get -y install libxcb-shape0-dev libxcb-xfixes0-dev
 notifications:

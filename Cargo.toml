@@ -21,11 +21,11 @@ winit = "0.19"
 
 [dependencies.imagepipe]
 version = "0.3.0"
-path = "./imagepipe"
+path = "../imagepipe"
 
 [dependencies.multicache]
 version = "0.6.0"
-path = "./imagepipe/multicache"
+path = "../multicache"
 
 [profile.release]
 panic = "unwind"

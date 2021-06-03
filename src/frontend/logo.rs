@@ -14,6 +14,6 @@ pub fn random() -> &'static [u8] {
   logos.push(include_bytes!("../../icons/chimp9.svg.png"));
 
   let mut rng = rand::thread_rng();
-  let idx = rng.gen_range(0, logos.len());
+  let idx = rng.gen_range(0..logos.len());
   logos[idx]
 }

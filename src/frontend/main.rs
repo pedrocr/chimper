@@ -290,7 +290,7 @@ pub fn run_app(path: Option<PathBuf>) {
 
 // Load the image from a file
 pub fn load_image(buf: &[u8]) -> glium::texture::RawImage2d<u8> {
-  let img = image::load_from_memory(buf).unwrap().to_rgba();
+  let img = image::load_from_memory(buf).unwrap().to_rgba8();
   let dims = img.dimensions();
   glium::texture::RawImage2d::from_raw_rgba_reversed(&img.into_raw(), dims)
 }

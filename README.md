@@ -1,6 +1,6 @@
 # chimper
 
-[![Build Status](https://travis-ci.org/pedrocr/chimper.svg?branch=master)](https://travis-ci.org/pedrocr/chimper)
+[![Build Status](https://travis-ci.com/pedrocr/chimper.svg?branch=master)](https://travis-ci.com/pedrocr/chimper)
 [![Crates.io](https://img.shields.io/crates/v/chimper.svg)](https://crates.io/crates/chimper)
 
 ![Screenshot](/images/screenshot.png?raw=true)

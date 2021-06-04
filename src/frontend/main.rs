@@ -54,6 +54,7 @@ pub enum DisplayableState {
   Empty,
   Requested(RequestedImage),
   Present(DisplayableImage),
+  Broken(String),
 }
 
 pub struct Chimper {
@@ -154,7 +155,7 @@ pub fn run_app(path: Option<PathBuf>) {
   fn run_conrod(
     event_rx: std::sync::mpsc::Receiver<conrod_core::event::Input>,
     app_event_rx: std::sync::mpsc::Receiver<AppEvent>,
-    image_displayable_rx: std::sync::mpsc::Receiver<DisplayableImage>,
+    image_displayable_rx: std::sync::mpsc::Receiver<DisplayableState>,
     image_request_tx: std::sync::mpsc::Sender<RequestedImage>,
     render_tx: std::sync::mpsc::Sender<conrod_core::render::OwnedPrimitives>,
     events_loop_proxy: glium::glutin::event_loop::EventLoopProxy<()>,
@@ -181,7 +182,7 @@ pub fn run_app(path: Option<PathBuf>) {
 
       // Receive any images
       while let Ok(image) = image_displayable_rx.try_recv() {
-        chimp.image = DisplayableState::Present(image);
+        chimp.image = image;
       }
 
       // Collect any pending events.
@@ -209,6 +210,7 @@ pub fn run_app(path: Option<PathBuf>) {
         DisplayableState::Empty => None,
         DisplayableState::Requested(ref req) => Some(req.file.clone()),
         DisplayableState::Present(ref disp) => Some(disp.file.clone()),
+        DisplayableState::Broken(ref file) => Some(file.clone()),
       };
       if currfile != chimp.file {
         if let Some(ref file) = chimp.file {
@@ -381,22 +383,26 @@ pub fn run_app(path: Option<PathBuf>) {
             // If we have a new image insert it into the map so it can be displayed
             // and then send a message to the GUI thread to display it
             if let Ok((file,image)) = image_result_rx.try_recv() {
-              // Create a new image
-              let dims = (image.0.width as u32, image.0.height as u32);
-              let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(&image.0.data, dims);
-              let img = glium::texture::SrgbTexture2d::with_format(
-                display,
-                raw_image,
-                glium::texture::SrgbFormat::U8U8U8,
-                glium::texture::MipmapsOption::NoMipmap
-              ).unwrap();
-              let id = image_map.insert(img);
-              let displayable = DisplayableImage {
-                file,
-                id,
-                width: dims.0,
-                height: dims.1,
-                ops: image.1.clone(),
+              let displayable = if let Some(image) = image {
+                // Create a new image
+                let dims = (image.0.width as u32, image.0.height as u32);
+                let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(&image.0.data, dims);
+                let img = glium::texture::SrgbTexture2d::with_format(
+                  display,
+                  raw_image,
+                  glium::texture::SrgbFormat::U8U8U8,
+                  glium::texture::MipmapsOption::NoMipmap
+                ).unwrap();
+                let id = image_map.insert(img);
+                DisplayableState::Present(DisplayableImage {
+                  file,
+                  id,
+                  width: dims.0,
+                  height: dims.1,
+                  ops: image.1.clone(),
+                })
+              } else {
+                DisplayableState::Broken(file.clone())
               };
               image_displayable_tx.send(displayable).unwrap();
             }

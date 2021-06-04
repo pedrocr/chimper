@@ -12,7 +12,7 @@ pub struct RequestedImage {
 }
 
 pub type ImageOutput = (SRGBImage, imagepipe::PipelineOps);
-pub type ImageResult = (String, Arc<ImageOutput>);
+pub type ImageResult = (String, Option<Arc<ImageOutput>>);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct CacheKey {
@@ -70,7 +70,7 @@ impl ImageCache {
     if !self.images.contains_key(&key) {
       self.load_raw(&key);
     }
-    (file, self.images.get(&key).unwrap())
+    (file, self.images.get(&key))
   }
 
   fn load_raw(&self, req: &CacheKey) {

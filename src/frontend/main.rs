@@ -40,6 +40,22 @@ pub enum SelectedOp {
   Transform,
 }
 
+#[derive(Debug, Clone)]
+pub struct DisplayableImage {
+  pub file: String,
+  pub id: conrod_core::image::Id,
+  pub width: u32,
+  pub height: u32,
+  pub ops: imagepipe::PipelineOps,
+}
+
+#[derive(Debug, Clone)]
+pub enum DisplayableState {
+  Empty,
+  Requested(RequestedImage),
+  Present(DisplayableImage),
+}
+
 pub struct Chimper {
   pub dragwidth: f64,
   pub sidewidth: f64,
@@ -50,7 +66,7 @@ pub struct Chimper {
   pub sideopt: bool,
   pub directory: std::path::PathBuf,
   pub file: Option<String>,
-  pub image: Option<DisplayableImage>,
+  pub image: DisplayableState,
   pub ops: Option<imagepipe::PipelineOps>,
   pub selected_op: SelectedOp,
   pub fullscreen: bool,
@@ -81,21 +97,12 @@ impl Chimper {
       file,
       directory,
       sideopt,
-      image: None,
+      image: DisplayableState::Empty,
       ops: None,
       selected_op: SelectedOp::None,
       fullscreen: false,
     }
   }
-}
-
-#[derive(Debug, Clone)]
-pub struct DisplayableImage {
-  pub file: String,
-  pub id: conrod_core::image::Id,
-  pub width: u32,
-  pub height: u32,
-  pub ops: imagepipe::PipelineOps,
 }
 
 static WIN_W: f64 = 1200.0;
@@ -172,7 +179,7 @@ pub fn run_app(path: Option<PathBuf>) {
 
       // Receive any images
       while let Ok(image) = image_displayable_rx.try_recv() {
-        chimp.image = Some(image);
+        chimp.image = DisplayableState::Present(image);
       }
 
       // Collect any pending events.
@@ -196,10 +203,10 @@ pub fn run_app(path: Option<PathBuf>) {
         needs_update = true;
       }
 
-      let currfile = if let Some(ref image) = chimp.image {
-        Some(image.file.clone())
-      } else {
-        None
+      let currfile = match chimp.image {
+        DisplayableState::Empty => None,
+        DisplayableState::Requested(ref req) => Some(req.file.clone()),
+        DisplayableState::Present(ref disp) => Some(disp.file.clone()),
       };
       if currfile != chimp.file {
         if let Some(ref file) = chimp.file {
@@ -209,7 +216,9 @@ pub fn run_app(path: Option<PathBuf>) {
             size: (ui.win_w as usize, ui.win_h as usize),
             ops: None,
           };
-          image_request_tx.send(req).unwrap();
+          image_request_tx.send(req.clone()).unwrap();
+          chimp.image = DisplayableState::Requested(req);
+          eprintln!("Requesting new image");
         }
       }
 

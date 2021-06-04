@@ -3,6 +3,7 @@ use conrod_core::{widget, Colorable, Positionable, Sizeable, Borderable, Widget,
 extern crate imagepipe;
 
 use crate::frontend::main::Chimper;
+use crate::frontend::main::DisplayableState;
 use crate::frontend::ops;
 
 pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod_core::Ui) -> bool {
@@ -30,7 +31,7 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod_core::Ui) -> bool {
       ])),
     ]).border(0.0).set(ids.background, ui);
 
-    if let Some(ref image) = chimper.image {
+    if let DisplayableState::Present(ref image) = chimper.image {
       let scale = (image.width as f64)/(image.height as f64);
       let mut width = (ui.w_of(ids.imgcanvas).unwrap() - img_padding).min(image.width as f64);
       let mut height = (ui.h_of(ids.imgcanvas).unwrap() - img_padding).min(image.height as f64);

@@ -147,6 +147,8 @@ pub fn run_app(path: Option<PathBuf>) {
   let (image_result_tx, image_result_rx) = std::sync::mpsc::channel();
   // A channel to send images from the main thread to the conrod thread
   let (image_displayable_tx, image_displayable_rx) = std::sync::mpsc::channel();
+  // Clone the handle to the events loop so that we can interrupt it when we have a new image
+  let events_loop_proxy2 = event_loop.create_proxy();
 
   // A function that runs the conrod loop.
   fn run_conrod(
@@ -218,7 +220,6 @@ pub fn run_app(path: Option<PathBuf>) {
           };
           image_request_tx.send(req.clone()).unwrap();
           chimp.image = DisplayableState::Requested(req);
-          eprintln!("Requesting new image");
         }
       }
 
@@ -242,6 +243,7 @@ pub fn run_app(path: Option<PathBuf>) {
   fn run_cache(
     image_request_rx: std::sync::mpsc::Receiver<RequestedImage>,
     image_result_tx: std::sync::mpsc::Sender<ImageResult>,
+    events_loop_proxy: glium::glutin::event_loop::EventLoopProxy<()>,
   ) {
     let cache = ImageCache::new();
     'cache: loop {
@@ -264,7 +266,7 @@ pub fn run_app(path: Option<PathBuf>) {
 
       // Grab the image from the cache
       let res = cache.get(req);
-      if image_result_tx.send(res).is_err() {
+      if image_result_tx.send(res).is_err() || events_loop_proxy.send_event(()).is_err() {
         // If we can't send we're also done as there's no one to receive anymore
         break 'cache
       }
@@ -298,36 +300,17 @@ pub fn run_app(path: Option<PathBuf>) {
   ));
 
   // Spawn the cache loop on its own thread.
-  std::thread::spawn(move || run_cache(image_request_rx, image_result_tx));
+  std::thread::spawn(move || run_cache(
+    image_request_rx,
+    image_result_tx,
+    events_loop_proxy2,
+  ));
 
   // Run the `winit` loop.
   let mut is_waken = false;
   let mut latest_primitives = None;
   let mut fullscreen = false;
   support::run_loop(display, event_loop, move |request, display| {
-    // If we have a new image insert it into the map so it can be displayed
-    // and then send a message to the GUI thread to display it
-    if let Ok((file,image)) = image_result_rx.try_recv() {
-      // Create a new image
-      let dims = (image.0.width as u32, image.0.height as u32);
-      let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(&image.0.data, dims);
-      let img = glium::texture::SrgbTexture2d::with_format(
-        display,
-        raw_image,
-        glium::texture::SrgbFormat::U8U8U8,
-        glium::texture::MipmapsOption::NoMipmap
-      ).unwrap();
-      let id = image_map.insert(img);
-      let displayable = DisplayableImage {
-        file,
-        id,
-        width: dims.0,
-        height: dims.1,
-        ops: image.1.clone(),
-      };
-      image_displayable_tx.send(displayable).unwrap();
-    }
-
     match request {
       support::Request::Event {
         event,
@@ -395,6 +378,31 @@ pub fn run_app(path: Option<PathBuf>) {
             _ => {}
           },
           glium::glutin::event::Event::UserEvent(()) => {
+            // If we have a new image insert it into the map so it can be displayed
+            // and then send a message to the GUI thread to display it
+            if let Ok((file,image)) = image_result_rx.try_recv() {
+              // Create a new image
+              let dims = (image.0.width as u32, image.0.height as u32);
+              let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(&image.0.data, dims);
+              let img = glium::texture::SrgbTexture2d::with_format(
+                display,
+                raw_image,
+                glium::texture::SrgbFormat::U8U8U8,
+                glium::texture::MipmapsOption::NoMipmap
+              ).unwrap();
+              let id = image_map.insert(img);
+              let displayable = DisplayableImage {
+                file,
+                id,
+                width: dims.0,
+                height: dims.1,
+                ops: image.1.clone(),
+              };
+              image_displayable_tx.send(displayable).unwrap();
+            }
+
+            // Wake up conrod to redraw
+            event_tx.send(conrod_core::event::Input::Redraw).unwrap();
             is_waken = true;
             // HACK: This triggers the `SetUi` request so that we can request a redraw.
             *should_update_ui = true;

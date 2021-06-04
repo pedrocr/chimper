@@ -7,7 +7,8 @@ use self::imagepipe::SRGBImage;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RequestedImage {
   pub file: String,
-  pub size: (usize, usize),
+  pub width: u32,
+  pub height: u32,
   pub ops: Option<imagepipe::PipelineOps>,
 }
 
@@ -15,6 +16,8 @@ pub struct RequestedImage {
 pub struct ImageOutput {
   pub image: SRGBImage,
   pub ops: imagepipe::PipelineOps,
+  pub maxwidth: u32,
+  pub maxheight: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -30,7 +33,7 @@ struct CacheKey {
   pub ops: Option<imagepipe::PipelineOps>,
 }
 
-const SIZES: [(usize, usize);7] = [
+const SIZES: [(u32, u32);7] = [
   (640, 480),   //  0,3MP - Small thumbnail
   (1400, 800),  //  1,1MP - 720p+
   (2000, 1200), //  2,4MP - 1080p+
@@ -40,9 +43,9 @@ const SIZES: [(usize, usize);7] = [
   (0, 0),       // Go full size above 5K
 ];
 
-fn find_level(dims: (usize, usize)) -> usize {
+fn find_level(width: u32, height: u32) -> usize {
   for (i,vals) in SIZES.iter().enumerate() {
-    if vals.0 >= dims.0 && vals.1 >= dims.1 {
+    if vals.0 >= width && vals.1 >= height {
       return i
     }
   }
@@ -51,7 +54,7 @@ fn find_level(dims: (usize, usize)) -> usize {
 
 impl CacheKey {
   fn from_request(req: RequestedImage) -> Self {
-    let level = find_level(req.size);
+    let level = find_level(req.width, req.height);
     CacheKey {
       level,
       file: req.file,
@@ -90,7 +93,7 @@ impl ImageCache {
 
     eprintln!("processing {}", req.file);
 
-    let mut pipeline = match imagepipe::Pipeline::new_from_file(&req.file, maxwidth, maxheight, false) {
+    let mut pipeline = match imagepipe::Pipeline::new_from_file(&req.file, maxwidth as usize, maxheight as usize, false) {
       Ok(pipe) => pipe,
       Err(_) => {
         eprintln!("Don't know how to load \"{}\"", req.file);
@@ -108,9 +111,17 @@ impl ImageCache {
       },
     };
     let imgsize = decoded.width*decoded.height*3;
+    let maxsize = if decoded.width < maxwidth as usize && decoded.height < maxheight as usize {
+      // This is already native size, there's no point in asking us for larger
+      (u32::MAX, u32::MAX)
+    } else {
+      (maxwidth, maxheight)
+    };
     let value = Arc::new(ImageOutput {
       image: decoded,
       ops: pipeline.ops.clone(),
+      maxwidth: maxsize.0,
+      maxheight: maxsize.1,
     });
     if req.ops.is_none() {
       // We have requested an image with default ops so also store in the cache

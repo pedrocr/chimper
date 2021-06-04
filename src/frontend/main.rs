@@ -46,6 +46,8 @@ pub struct DisplayableImage {
   pub id: conrod_core::image::Id,
   pub width: u32,
   pub height: u32,
+  pub maxwidth: u32,
+  pub maxheight: u32,
   pub ops: imagepipe::PipelineOps,
 }
 
@@ -221,6 +223,9 @@ pub fn run_app(path: Option<PathBuf>) {
             if &(disp.file) != file {
               need_new_image = true;
             }
+            if ui.win_w as u32 > disp.maxwidth || ui.win_h  as u32 > disp.maxheight {
+              need_new_image = true;
+            }
           },
           DisplayableState::Broken(ref bfile) => {
             if bfile != file {
@@ -233,7 +238,8 @@ pub fn run_app(path: Option<PathBuf>) {
           // We have a new image so we need to request it
           let req = RequestedImage {
             file: file.clone(),
-            size: (ui.win_w as usize, ui.win_h as usize),
+            width: ui.win_w as u32,
+            height: ui.win_h as u32,
             ops: None,
           };
           image_request_tx.send(req.clone()).unwrap();
@@ -405,6 +411,8 @@ pub fn run_app(path: Option<PathBuf>) {
                 // Create a new image
                 let width = image.image.width as u32;
                 let height = image.image.height as u32;
+                let maxwidth = image.maxwidth as u32;
+                let maxheight = image.maxheight as u32;
                 let dims = (width, height);
                 let data = &image.image.data;
                 let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(data, dims);
@@ -420,6 +428,8 @@ pub fn run_app(path: Option<PathBuf>) {
                   id,
                   width,
                   height,
+                  maxwidth,
+                  maxheight,
                   ops: image.ops.clone(),
                 })
               } else {

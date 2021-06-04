@@ -2,7 +2,6 @@ extern crate imagepipe;
 extern crate conrod_core;
 use conrod_core::text::Font;
 extern crate glium;
-//use self::glium::glutin::event_loop::EventLoopProxy;
 use self::glium::texture::SrgbTexture2d;
 use self::glium::Surface;
 use self::glium::glutin::window::Fullscreen;
@@ -12,12 +11,12 @@ use conrod_glium::Renderer;
 
 use std::env;
 use std::path::PathBuf;
-extern crate crossbeam_utils;
+use std::sync::mpsc::TryRecvError;
 extern crate image;
 
 use crate::frontend::*;
-//use crate::backend::cache;
-//use crate::backend::cache::RequestedImage;
+use crate::backend::cache::*;
+
 
 widget_ids!(
 pub struct ChimperIds {
@@ -92,9 +91,11 @@ impl Chimper {
 
 #[derive(Debug, Clone)]
 pub struct DisplayableImage {
+  pub file: String,
   pub id: conrod_core::image::Id,
   pub width: u32,
   pub height: u32,
+  pub ops: imagepipe::PipelineOps,
 }
 
 static WIN_W: f64 = 1200.0;
@@ -133,11 +134,19 @@ pub fn run_app(path: Option<PathBuf>) {
   let (render_tx, render_rx) = std::sync::mpsc::channel();
   // Clone the handle to the events loop so that we can interrupt it when ready to draw.
   let events_loop_proxy = event_loop.create_proxy();
+  // A channel to request images from the cache thread
+  let (image_request_tx, image_request_rx) = std::sync::mpsc::channel();
+  // A channel to receive images from the cache thread
+  let (image_result_tx, image_result_rx) = std::sync::mpsc::channel();
+  // A channel to send images from the main thread to the conrod thread
+  let (image_displayable_tx, image_displayable_rx) = std::sync::mpsc::channel();
 
   // A function that runs the conrod loop.
   fn run_conrod(
     event_rx: std::sync::mpsc::Receiver<conrod_core::event::Input>,
     app_event_rx: std::sync::mpsc::Receiver<AppEvent>,
+    image_displayable_rx: std::sync::mpsc::Receiver<DisplayableImage>,
+    image_request_tx: std::sync::mpsc::Sender<RequestedImage>,
     render_tx: std::sync::mpsc::Sender<conrod_core::render::OwnedPrimitives>,
     events_loop_proxy: glium::glutin::event_loop::EventLoopProxy<()>,
     logoid: conrod_core::image::Id,
@@ -161,6 +170,11 @@ pub fn run_app(path: Option<PathBuf>) {
         }
       }
 
+      // Receive any images
+      while let Ok(image) = image_displayable_rx.try_recv() {
+        chimp.image = Some(image);
+      }
+
       // Collect any pending events.
       let mut events = Vec::new();
       while let Ok(event) = event_rx.try_recv() {
@@ -182,6 +196,23 @@ pub fn run_app(path: Option<PathBuf>) {
         needs_update = true;
       }
 
+      let currfile = if let Some(ref image) = chimp.image {
+        Some(image.file.clone())
+      } else {
+        None
+      };
+      if currfile != chimp.file {
+        if let Some(ref file) = chimp.file {
+          // We have a new image so we need to request it
+          let req = RequestedImage {
+            file: file.clone(),
+            size: (ui.win_w as usize, ui.win_h as usize),
+            ops: None,
+          };
+          image_request_tx.send(req).unwrap();
+        }
+      }
+
       // Instantiate a GUI demonstrating every widget type provided by conrod.
       gui::draw_gui(&mut chimp, &mut ui);
       //conrod_example_shared::gui(&mut ui.set_widgets(), &ids, &mut app);
@@ -195,6 +226,38 @@ pub fn run_app(path: Option<PathBuf>) {
         {
           break 'conrod;
         }
+      }
+    }
+  }
+
+  fn run_cache(
+    image_request_rx: std::sync::mpsc::Receiver<RequestedImage>,
+    image_result_tx: std::sync::mpsc::Sender<ImageResult>,
+  ) {
+    let cache = ImageCache::new();
+    'cache: loop {
+      // Block until we either get a request or the other end closes and we'
+      let mut req = match image_request_rx.recv() {
+        Err(_) => break 'cache,
+        Ok(req) => req,
+      };
+
+      // Only process the latest request, drop all others
+      // If all the requests were buffered and the other end disconnected
+      // then we're done
+      'recv: loop {
+        match image_request_rx.try_recv() {
+          Err(TryRecvError::Empty) => break 'recv,
+          Err(TryRecvError::Disconnected) => break 'cache,
+          Ok(r) => {req = r;},
+        }
+      }
+
+      // Grab the image from the cache
+      let res = cache.get(req);
+      if image_result_tx.send(res).is_err() {
+        // If we can't send we're also done as there's no one to receive anymore
+        break 'cache
       }
     }
   }
@@ -214,13 +277,48 @@ pub fn run_app(path: Option<PathBuf>) {
   }
 
   // Spawn the conrod loop on its own thread.
-  std::thread::spawn(move || run_conrod(event_rx, app_event_rx, render_tx, events_loop_proxy, logoid, path));
+  std::thread::spawn(move || run_conrod(
+    event_rx,
+    app_event_rx,
+    image_displayable_rx,
+    image_request_tx,
+    render_tx,
+    events_loop_proxy,
+    logoid,
+    path
+  ));
+
+  // Spawn the cache loop on its own thread.
+  std::thread::spawn(move || run_cache(image_request_rx, image_result_tx));
 
   // Run the `winit` loop.
   let mut is_waken = false;
   let mut latest_primitives = None;
   let mut fullscreen = false;
   support::run_loop(display, event_loop, move |request, display| {
+    // If we have a new image insert it into the map so it can be displayed
+    // and then send a message to the GUI thread to display it
+    if let Ok((file,image)) = image_result_rx.try_recv() {
+      // Create a new image
+      let dims = (image.0.width as u32, image.0.height as u32);
+      let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(&image.0.data, dims);
+      let img = glium::texture::SrgbTexture2d::with_format(
+        display,
+        raw_image,
+        glium::texture::SrgbFormat::U8U8U8,
+        glium::texture::MipmapsOption::NoMipmap
+      ).unwrap();
+      let id = image_map.insert(img);
+      let displayable = DisplayableImage {
+        file,
+        id,
+        width: dims.0,
+        height: dims.1,
+        ops: image.1.clone(),
+      };
+      image_displayable_tx.send(displayable).unwrap();
+    }
+
     match request {
       support::Request::Event {
         event,

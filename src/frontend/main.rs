@@ -346,6 +346,7 @@ pub fn run_app(path: Option<PathBuf>) {
   let mut is_waken = false;
   let mut latest_primitives = None;
   let mut fullscreen = false;
+  let mut imageid = None;
   support::run_loop(display, event_loop, move |request, display| {
     match request {
       support::Request::Event {
@@ -432,7 +433,14 @@ pub fn run_app(path: Option<PathBuf>) {
                   glium::texture::SrgbFormat::U8U8U8,
                   glium::texture::MipmapsOption::NoMipmap
                 ).unwrap();
-                let id = image_map.insert(img);
+                let id = if let Some(currid) = imageid {
+                  image_map.replace(currid, img);
+                  currid
+                } else {
+                  let newid = image_map.insert(img);
+                  imageid = Some(newid);
+                  newid
+                };
                 DisplayableState::Present(DisplayableImage {
                   file: image_result.file,
                   id,

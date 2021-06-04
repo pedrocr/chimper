@@ -12,7 +12,6 @@ edition = "2018"
 [dependencies]
 image = "0.23"
 rand = "0.8"
-crossbeam-utils = "0.8"
 conrod_core = "0.73"
 conrod_glium = "0.73"
 conrod_winit = "0.73"

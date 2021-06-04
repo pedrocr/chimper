@@ -194,7 +194,6 @@ dependencies = [
  "conrod_core",
  "conrod_glium",
  "conrod_winit",
- "crossbeam-utils 0.8.5",
  "glium",
  "image",
  "imagepipe",

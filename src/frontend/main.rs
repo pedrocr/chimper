@@ -118,9 +118,11 @@ pub fn run_app(path: Option<PathBuf>) {
   let mut renderer = Renderer::new(&display).unwrap();
   let mut image_map = conrod_core::image::Map::new();
 
-  // Grab a chimper logo and insert it into the map
-  let logo = load_image(logo::random());
-  let texture = glium::texture::SrgbTexture2d::new(&display, logo).unwrap();
+  // Grab a chimper logo and insert it into the image map
+  let img = image::load_from_memory(logo::random()).unwrap().to_rgba8();
+  let dims = img.dimensions();
+  let raw = glium::texture::RawImage2d::from_raw_rgba_reversed(&img.into_raw(), dims);
+  let texture = glium::texture::SrgbTexture2d::new(&display, raw).unwrap();
   let logoid = image_map.insert(texture);
 
   // A channel to send events from the main `winit` thread to the conrod thread.
@@ -308,11 +310,4 @@ pub fn run_app(path: Option<PathBuf>) {
       }
     }
   })
-}
-
-// Load the image from a file
-pub fn load_image(buf: &[u8]) -> glium::texture::RawImage2d<u8> {
-  let img = image::load_from_memory(buf).unwrap().to_rgba8();
-  let dims = img.dimensions();
-  glium::texture::RawImage2d::from_raw_rgba_reversed(&img.into_raw(), dims)
 }

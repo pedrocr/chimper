@@ -213,15 +213,24 @@ pub fn run_app(path: Option<PathBuf>) {
         match chimp.image {
           DisplayableState::Empty => {
             need_new_image = true;
+            chimp.ops = None;
           },
           DisplayableState::Requested(ref req) => {
             if &(req.file) != file {
               need_new_image = true;
+              chimp.ops = None;
             }
           },
           DisplayableState::Present(ref disp) => {
             if &(disp.file) != file {
               need_new_image = true;
+              chimp.ops = None;
+            } else if let Some(ref currops) = chimp.ops {
+              if currops != &(disp.ops) {
+                need_new_image = true;
+              }
+            } else {
+              chimp.ops = Some(disp.ops.clone());
             }
             if ui.win_w as u32 > disp.maxwidth || ui.win_h  as u32 > disp.maxheight {
               need_new_image = true;
@@ -230,6 +239,7 @@ pub fn run_app(path: Option<PathBuf>) {
           DisplayableState::Broken(ref bfile) => {
             if bfile != file {
               need_new_image = true;
+              chimp.ops = None;
             }
           },
         }
@@ -240,7 +250,7 @@ pub fn run_app(path: Option<PathBuf>) {
             file: file.clone(),
             width: ui.win_w as u32,
             height: ui.win_h as u32,
-            ops: None,
+            ops: chimp.ops.clone(),
           };
           image_request_tx.send(req.clone()).unwrap();
           chimp.image = DisplayableState::Requested(req);

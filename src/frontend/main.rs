@@ -206,14 +206,30 @@ pub fn run_app(path: Option<PathBuf>) {
         needs_update = true;
       }
 
-      let currfile = match chimp.image {
-        DisplayableState::Empty => None,
-        DisplayableState::Requested(ref req) => Some(req.file.clone()),
-        DisplayableState::Present(ref disp) => Some(disp.file.clone()),
-        DisplayableState::Broken(ref file) => Some(file.clone()),
-      };
-      if currfile != chimp.file {
-        if let Some(ref file) = chimp.file {
+      if let Some(ref file) = chimp.file {
+        let mut need_new_image = false;
+        match chimp.image {
+          DisplayableState::Empty => {
+            need_new_image = true;
+          },
+          DisplayableState::Requested(ref req) => {
+            if &(req.file) != file {
+              need_new_image = true;
+            }
+          },
+          DisplayableState::Present(ref disp) => {
+            if &(disp.file) != file {
+              need_new_image = true;
+            }
+          },
+          DisplayableState::Broken(ref bfile) => {
+            if bfile != file {
+              need_new_image = true;
+            }
+          },
+        }
+
+        if need_new_image {
           // We have a new image so we need to request it
           let req = RequestedImage {
             file: file.clone(),
@@ -223,6 +239,8 @@ pub fn run_app(path: Option<PathBuf>) {
           image_request_tx.send(req.clone()).unwrap();
           chimp.image = DisplayableState::Requested(req);
         }
+      } else {
+        chimp.image = DisplayableState::Empty;
       }
 
       // Instantiate a GUI demonstrating every widget type provided by conrod.

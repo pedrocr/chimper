@@ -14,13 +14,8 @@ mod basecurve;
 mod transform;
 
 pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) {
-  let mut ops = chimper.ops.lock().unwrap();
-  let ids = match chimper.ids {
-    Some(ref mut ids) => ids,
-    None => {unreachable!()},
-  };
-
-  if let Some((_, ref mut ops)) = *ops {
+  let ids = &mut chimper.ids;
+  if let Some(ref mut ops) = chimper.ops {
     let mut voffset = 0.0;
     let mut numop = 0;
 

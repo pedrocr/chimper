@@ -11,14 +11,10 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod_core::Ui) -> bool {
   let sidewidth = chimper.sidewidth * ((chimper.use_sidepane as u8) as f64);
   let dragwidth = chimper.dragwidth * ((chimper.use_sidepane as u8) as f64);
   {
-    let ids = match chimper.ids {
-      Some(ref ids) => ids,
-      None => {unreachable!()},
-    };
-
+    let ids = &mut chimper.ids;
 
     // Adjust settings for fullscreen images
-    let (img_bgcolor, img_padding) = if *(chimper.fullscreen.lock().unwrap()) && !chimper.use_sidepane {
+    let (img_bgcolor, img_padding) = if chimper.fullscreen && !chimper.use_sidepane {
       (color::BLACK, 0.0)
     } else {
       (color::CHARCOAL, chimper.imagepadding)

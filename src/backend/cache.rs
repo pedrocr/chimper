@@ -6,6 +6,7 @@ use self::multicache::MultiCache;
 use std::sync::Arc;
 use self::imagepipe::SRGBImage;
 extern crate glium;
+use self::glium::glutin::event_loop::EventLoopProxy;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RequestedImage {
@@ -46,7 +47,7 @@ impl ImageCache {
     }
   }
 
-  pub fn get<'a>(&'a self, req: RequestedImage, scope: &Scope<'a>, evproxy: glium::glutin::EventsLoopProxy) -> Arc<Option<(SRGBImage, imagepipe::PipelineOps)>> {
+  pub fn get<'a>(&'a self, req: RequestedImage, scope: &Scope<'a>, evproxy: EventLoopProxy<()>) -> Arc<Option<(SRGBImage, imagepipe::PipelineOps)>> {
     if let Some(img) = self.images.get(&req) {
       // We found at least an empty guard value, return that cloned to activate Arc
       img.clone()
@@ -58,7 +59,7 @@ impl ImageCache {
     }
   }
 
-  fn load_raw<'a>(&'a self, req: RequestedImage, scope: &Scope<'a>, evproxy: glium::glutin::EventsLoopProxy) {
+  fn load_raw<'a>(&'a self, req: RequestedImage, scope: &Scope<'a>, evproxy: EventLoopProxy<()>) {
     let maxwidth = SIZES[req.size][0];
     let maxheight = SIZES[req.size][1];
 
@@ -85,7 +86,7 @@ impl ImageCache {
       let imgsize = decoded.width*decoded.height*3;
       let ops = pipeline.ops.clone();
       self.images.put(req.clone(), Some((decoded, ops)), imgsize);
-      evproxy.wakeup().unwrap();
+      evproxy.send_event(()).unwrap();
     });
   }
 }

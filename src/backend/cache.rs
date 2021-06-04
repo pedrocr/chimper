@@ -11,8 +11,17 @@ pub struct RequestedImage {
   pub ops: Option<imagepipe::PipelineOps>,
 }
 
-pub type ImageOutput = (SRGBImage, imagepipe::PipelineOps);
-pub type ImageResult = (String, Option<Arc<ImageOutput>>);
+#[derive(Debug, Clone)]
+pub struct ImageOutput {
+  pub image: SRGBImage,
+  pub ops: imagepipe::PipelineOps,
+}
+
+#[derive(Debug, Clone)]
+pub struct ImageResult {
+  pub file: String,
+  pub image: Option<Arc<ImageOutput>>,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct CacheKey {
@@ -70,7 +79,10 @@ impl ImageCache {
     if !self.images.contains_key(&key) {
       self.load_raw(&key);
     }
-    (file, self.images.get(&key))
+    ImageResult {
+      file,
+      image: self.images.get(&key),
+    }
   }
 
   fn load_raw(&self, req: &CacheKey) {
@@ -96,7 +108,10 @@ impl ImageCache {
       },
     };
     let imgsize = decoded.width*decoded.height*3;
-    let value = Arc::new((decoded, pipeline.ops.clone()));
+    let value = Arc::new(ImageOutput {
+      image: decoded,
+      ops: pipeline.ops.clone(),
+    });
     if req.ops.is_none() {
       // We have requested an image with default ops so also store in the cache
       // with the ops themselves. Otherwise we would waste time running the whole

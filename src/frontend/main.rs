@@ -400,11 +400,14 @@ pub fn run_app(path: Option<PathBuf>) {
           glium::glutin::event::Event::UserEvent(()) => {
             // If we have a new image insert it into the map so it can be displayed
             // and then send a message to the GUI thread to display it
-            if let Ok((file,image)) = image_result_rx.try_recv() {
-              let displayable = if let Some(image) = image {
+            if let Ok(image_result) = image_result_rx.try_recv() {
+              let displayable = if let Some(image) = image_result.image {
                 // Create a new image
-                let dims = (image.0.width as u32, image.0.height as u32);
-                let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(&image.0.data, dims);
+                let width = image.image.width as u32;
+                let height = image.image.height as u32;
+                let dims = (width, height);
+                let data = &image.image.data;
+                let raw_image = glium::texture::RawImage2d::from_raw_rgb_reversed(data, dims);
                 let img = glium::texture::SrgbTexture2d::with_format(
                   display,
                   raw_image,
@@ -413,14 +416,14 @@ pub fn run_app(path: Option<PathBuf>) {
                 ).unwrap();
                 let id = image_map.insert(img);
                 DisplayableState::Present(DisplayableImage {
-                  file,
+                  file: image_result.file,
                   id,
-                  width: dims.0,
-                  height: dims.1,
-                  ops: image.1.clone(),
+                  width,
+                  height,
+                  ops: image.ops.clone(),
                 })
               } else {
-                DisplayableState::Broken(file.clone())
+                DisplayableState::Broken(image_result.file.clone())
               };
               image_displayable_tx.send(displayable).unwrap();
             }

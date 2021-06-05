@@ -70,7 +70,7 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod_core::Ui) -> bool {
               if pbuf.len() > 0 {
                 let path = pbuf[0].as_path();
                 if path.is_file() {
-                  eprintln!("Loading file {:?}", path);
+                  log::info!("Loading file {:?}", path);
                   chimper.file = Some(path.to_str().unwrap().to_string());
                 }
               }

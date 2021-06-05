@@ -91,12 +91,12 @@ impl ImageCache {
   fn load_raw(&self, req: &CacheKey) {
     let (maxwidth, maxheight) = SIZES[req.level];
 
-    eprintln!("processing {}", req.file);
+    log::info!("processing {}", req.file);
 
     let mut pipeline = match imagepipe::Pipeline::new_from_file(&req.file, maxwidth as usize, maxheight as usize, false) {
       Ok(pipe) => pipe,
       Err(_) => {
-        eprintln!("Don't know how to load \"{}\"", req.file);
+        log::error!("Don't know how to load \"{}\"", req.file);
         return
       },
     };
@@ -106,7 +106,7 @@ impl ImageCache {
     let decoded = match pipeline.output_8bit(Some(&self.opbuffers)) {
       Ok(img) => img,
       Err(_) => {
-        eprintln!("Processing for \"{}\" failed", req.file);
+        log::error!("Processing for \"{}\" failed", req.file);
         return
       },
     };

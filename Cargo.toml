@@ -17,6 +17,8 @@ conrod_glium = "0.73"
 conrod_winit = "0.73"
 glium = "0.28"
 winit = "0.23"
+log = "0.4"
+env_logger = "0.8"
 
 [dependencies.imagepipe]
 version = "0.3.0"

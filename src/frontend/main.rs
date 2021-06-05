@@ -77,29 +77,37 @@ pub struct Chimper {
 
 impl Chimper {
   fn new(logoid: conrod_core::image::Id, path: Option<PathBuf>, ui: &mut conrod_core::Ui) -> Self {
-
-    let (file, directory, sideopt) = if let Some(path) = path {
-      if path.is_file() {
-        let file = path.to_str().unwrap().to_string();
-        let directory = path.parent().unwrap().to_owned();
-        (Some(file), directory, false)
+    let path = if let Some(path) = path {
+      if path.is_absolute() {
+        path
       } else {
-        (None, path, true)
+        env::current_dir().unwrap().join(path)
       }
     } else {
-      (None, env::current_dir().unwrap(), true)
+      env::current_dir().unwrap()
+    }.canonicalize().unwrap();
+
+    let (file, directory, use_sidepane) = if path.is_file() {
+      let file = path.to_str().unwrap().to_string();
+      let directory = path.parent().unwrap().to_owned();
+      log::debug!("opening file '{}' in directory '{}'", file, directory.as_path().display());
+      (Some(file), directory, false)
+    } else {
+      let directory = path.canonicalize().unwrap().to_owned();
+      log::debug!("opening directory '{}'", directory.as_path().display());
+      (None, directory, true)
     };
 
     Self {
       dragwidth: 5.0,
       sidewidth: 600.0,
-      use_sidepane: true,
+      use_sidepane,
       imagepadding: 20.0,
       logoid,
       ids: ChimperIds::new(ui.widget_id_generator()),
       file,
       directory,
-      sideopt,
+      sideopt: true,
       image: DisplayableState::Empty,
       ops: None,
       selected_op: SelectedOp::None,

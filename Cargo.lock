@@ -883,7 +883,7 @@ dependencies = [
 
 [[package]]
 name = "imagepipe"
-version = "0.3.5"
+version = "0.4.0"
 dependencies = [
  "bincode",
  "blake3",
@@ -1623,7 +1623,7 @@ dependencies = [
 
 [[package]]
 name = "rawloader"
-version = "0.36.3"
+version = "0.37.0"
 dependencies = [
  "byteorder",
  "enumn",

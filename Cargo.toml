@@ -21,7 +21,7 @@ log = "0.4"
 env_logger = "0.8"
 
 [dependencies.imagepipe]
-version = "0.3.0"
+version = "0.4"
 path = "../imagepipe"
 
 [dependencies.multicache]

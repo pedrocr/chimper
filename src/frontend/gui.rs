@@ -15,7 +15,7 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod_core::Ui) -> bool {
     let ids = &mut chimper.ids;
 
     // Adjust settings for fullscreen images
-    let (img_bgcolor, img_padding) = if chimper.fullscreen && !chimper.use_sidepane {
+    let (img_bgcolor, img_padding) = if !chimper.use_sidepane {
       (color::BLACK, 0.0)
     } else {
       (color::CHARCOAL, chimper.imagepadding)

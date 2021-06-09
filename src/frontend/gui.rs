@@ -31,7 +31,13 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod_core::Ui) -> bool {
       ])),
     ]).border(0.0).set(ids.background, ui);
 
-    if let DisplayableState::Present(ref image) = chimper.image {
+    let image = match chimper.image {
+      DisplayableState::Present(ref image) => Some(image),
+      DisplayableState::Requested(_, Some(ref image)) => Some(image),
+      _ => None,
+    };
+
+    if let Some(image) = image {
       let scale = (image.width as f64)/(image.height as f64);
       let mut width = (ui.w_of(ids.imgcanvas).unwrap() - img_padding).min(image.width as f64);
       let mut height = (ui.h_of(ids.imgcanvas).unwrap() - img_padding).min(image.height as f64);

@@ -54,7 +54,7 @@ pub struct DisplayableImage {
 #[derive(Debug, Clone)]
 pub enum DisplayableState {
   Empty,
-  Requested(RequestedImage),
+  Requested(RequestedImage, Option<DisplayableImage>),
   Present(DisplayableImage),
   Broken(String),
 }
@@ -218,20 +218,23 @@ pub fn run_app(path: Option<PathBuf>) {
 
       if let Some(ref file) = chimp.file {
         let mut need_new_image = false;
+        let mut new_file = false;
         match chimp.image {
           DisplayableState::Empty => {
             need_new_image = true;
             chimp.ops = None;
           },
-          DisplayableState::Requested(ref req) => {
+          DisplayableState::Requested(ref req, _) => {
             if &(req.file) != file {
               need_new_image = true;
+              new_file = true;
               chimp.ops = None;
             }
           },
           DisplayableState::Present(ref disp) => {
             if &(disp.file) != file {
               need_new_image = true;
+              new_file = true;
               chimp.ops = None;
             } else if let Some(ref currops) = chimp.ops {
               if currops != &(disp.ops) {
@@ -247,6 +250,7 @@ pub fn run_app(path: Option<PathBuf>) {
           DisplayableState::Broken(ref bfile) => {
             if bfile != file {
               need_new_image = true;
+              new_file = true;
               chimp.ops = None;
             }
           },
@@ -261,7 +265,12 @@ pub fn run_app(path: Option<PathBuf>) {
             ops: chimp.ops.clone(),
           };
           image_request_tx.send(req.clone()).unwrap();
-          chimp.image = DisplayableState::Requested(req);
+          let image = match (new_file, chimp.image) {
+            (false, DisplayableState::Present(image)) => Some(image),
+            (false, DisplayableState::Requested(_, Some(image))) => Some(image),
+            _ => None,
+          };
+          chimp.image = DisplayableState::Requested(req, image);
         }
       } else {
         chimp.image = DisplayableState::Empty;

@@ -93,13 +93,15 @@ impl ImageCache {
 
     log::info!("processing {}", req.file);
 
-    let mut pipeline = match imagepipe::Pipeline::new_from_file(&req.file, maxwidth as usize, maxheight as usize, false) {
+    let mut pipeline = match imagepipe::Pipeline::new_from_file(&req.file) {
       Ok(pipe) => pipe,
       Err(_) => {
         log::error!("Don't know how to load \"{}\"", req.file);
         return
       },
     };
+    pipeline.globals.settings.maxwidth = maxwidth as usize;
+    pipeline.globals.settings.maxheight = maxheight as usize;
     if let Some(ref ops) = req.ops {
       pipeline.ops = ops.clone();
     }

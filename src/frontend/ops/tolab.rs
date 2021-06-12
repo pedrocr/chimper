@@ -53,7 +53,10 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell, id: WidgetId) -> f64 {
     };
   }
 
+  let mut altered = false;
   let (otemp, otint) = ops.tolab.get_temp();
+  let mut temp = otemp;
+  let mut tint = otint;
   label!(500.0, 80.0, &format!("Temperature {}K", otemp as u32), Justify::Center);
   voffset += 36.0;
 
@@ -61,59 +64,67 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell, id: WidgetId) -> f64 {
   label!(60.0, 10.0, &format!("Tint\n{:.2}", otint), Justify::Center);
   voffset -= 150.0;
 
-  widget::Image::new(chimper.temp_tint_image_id)
-    .w_h(500.0, 300.0)
+  for etemp in widget::slider::Slider::new(otemp, MIN_TEMP, MAX_TEMP)
+    .w_h(460.0, 30.0)
+    .top_left_with_margins_on(id, voffset, 120.0)
+    .set(new_widget!(), ui)
+  {
+    temp = etemp;
+    altered = true;
+  }
+  voffset += 40.0;
+
+  for etint in widget::slider::Slider::new(otint, MIN_TINT, MAX_TINT)
+    .w_h(30.0, 300.0)
     .top_left_with_margins_on(id, voffset, 80.0)
+    .set(new_widget!(), ui)
+  {
+    tint = etint;
+    altered = true;
+  }
+
+  widget::Image::new(chimper.temp_tint_image_id)
+    .w_h(460.0, 300.0)
+    .top_left_with_margins_on(id, voffset, 120.0)
     .set(new_widget!(), ui);
 
-  for (temp, tint) in widget::XYPad::new(otemp, MIN_TEMP, MAX_TEMP, otint, MIN_TINT, MAX_TINT)
-    .w_h(500.0, 300.0)
-    .top_left_with_margins_on(id, voffset, 80.0)
+  for (etemp, etint) in widget::XYPad::new(otemp, MIN_TEMP, MAX_TEMP, otint, MIN_TINT, MAX_TINT)
+    .w_h(460.0, 300.0)
+    .top_left_with_margins_on(id, voffset, 120.0)
     .value_font_size(0)
     .color(conrod_core::color::Color::Rgba(1.0,1.0,1.0,0.0))
     .set(new_widget!(), ui)
   {
-    let delta = 10.0;
-    if (temp - otemp).abs() > delta || (tint - otint).abs() > delta {
+    temp = etemp;
+    tint = etint;
+    altered = true;
+  }
+  voffset += 300.0 + 36.0 * 0.5;
+
+  if altered {
+    let deltatemp = 10.0;
+    let deltatint = 0.01;
+    if (temp - otemp).abs() > deltatemp || (tint - otint).abs() > deltatint {
       log::debug!("Setting temp/tint to {}/{} from {}/{}", temp, tint, otemp, otint);
       ops.tolab.set_temp(temp, tint);
     }
   }
-  voffset += 300.0 + 36.0 * 0.5;
 
-  let mut altered = false;
-  macro_rules! slider_input {
-    ($name:expr, $value:expr, $min:expr, $max:expr) => {
-      label!(140.0, 0.0, $name, Justify::Right);
-      for event in widget::slider::Slider::new($value as f32, $min as f32, $max as f32)
-        .w_h(300.0, 30.0)
-        .top_left_with_margins_on(id, voffset, 150.0)
-        .set(new_widget!(), ui)
-      {
-        $value = event;
-        altered = true;
-      }
-      label!(100.0, 460.0, &($value.to_string()), Justify::Left);
-      voffset += 36.0;
-    };
-  }
-
-  let eps = 0.01;
+  let eps = 0.002;
   let has_emerald =
     ops.tolab.cam_to_xyz[0][3].abs() > eps ||
     ops.tolab.cam_to_xyz[1][3].abs() > eps ||
     ops.tolab.cam_to_xyz[2][3].abs() > eps;
   let coeffs = ops.tolab.wb_coeffs;
-  let (mut red, mut blue, mut emerald) = (coeffs[0], coeffs[2], coeffs[3]);
+  let (red, green, blue, emerald) = (coeffs[0], coeffs[1], coeffs[2], coeffs[3]);
+  let text = if has_emerald {
+    format!("Multipliers\nR: {:.2} G: {:.2} B: {:.2} E: {:.2}", red, green, blue, emerald)
+  } else {
+    format!("Multipliers\nR: {:.2} G: {:.2} B: {:.2}", red, green, blue)
+  };
+  label!(500.0, 80.0, &text, Justify::Center);
 
-  slider_input!("Red", red, 0.0, 5.0);
-  slider_input!("Blue", blue, 0.0, 5.0);
-  if has_emerald {
-    slider_input!("Emerald", emerald, 0.0, 5.0);
-  }
-  if altered {
-    ops.tolab.wb_coeffs = [red, 1.0, blue, emerald];
-  }
+  voffset += 36.0;
 
   voffset += 36.0 * 0.5;
 

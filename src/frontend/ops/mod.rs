@@ -9,7 +9,7 @@ pub use self::imagepipe::PipelineOps;
 use crate::frontend::main::*;
 
 mod rawinput;
-mod tolab;
+pub mod tolab;
 mod basecurve;
 mod transform;
 

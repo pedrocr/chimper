@@ -1,4 +1,31 @@
 use crate::frontend::ops::*;
+use imagepipe::color_conversions::*;
+
+static MIN_TEMP: f32 = 2000.0;
+static MAX_TEMP: f32 = 20000.0;
+
+static MIN_TINT: f32 = 8000.0;
+static MAX_TINT: f32 = 20000.0;
+
+pub fn temp_tint_image() -> ((u32, u32), Vec<u8>) {
+  let width = 500;
+  let height = 500;
+  let mut data = vec![0 as u8; width*height*4];
+  for (row, line) in data.chunks_exact_mut(width*4).enumerate() {
+    let rowpos = 1.0 - row as f32 / height as f32;
+    let tint = MIN_TINT + rowpos * (MAX_TINT - MIN_TINT);
+    for (col, pixout) in line.chunks_exact_mut(4).enumerate() {
+      let colpos = col as f32 / width as f32;
+      let temp = MIN_TEMP + colpos * (MAX_TEMP - MIN_TEMP);
+      let (r, g, b) = temp_tint_to_rgb(temp, tint);
+      pixout[0] = output8bit(apply_srgb_gamma(r));
+      pixout[1] = output8bit(apply_srgb_gamma(g));
+      pixout[2] = output8bit(apply_srgb_gamma(b));
+      pixout[3] = 255;
+    }
+  }
+  ((width as u32, height as u32), data)
+}
 
 pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell, id: WidgetId) -> f64 {
   let ids = &mut chimper.ids;
@@ -34,11 +61,16 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell, id: WidgetId) -> f64 {
   label!(60.0, 10.0, &format!("Tint\n{}", otint as u32), Justify::Center);
   voffset -= 150.0;
 
-  for (temp, tint) in widget::XYPad::new(otemp, 2000.0, 20000.0, otint, 8000.0, 20000.0)
+  widget::Image::new(chimper.temp_tint_image_id)
+    .w_h(500.0, 300.0)
+    .top_left_with_margins_on(id, voffset, 80.0)
+    .set(new_widget!(), ui);
+
+  for (temp, tint) in widget::XYPad::new(otemp, MIN_TEMP, MAX_TEMP, otint, MIN_TINT, MAX_TINT)
     .w_h(500.0, 300.0)
     .top_left_with_margins_on(id, voffset, 80.0)
     .value_font_size(0)
-    .color(conrod_core::color::Color::Rgba(1.0,1.0,1.0,1.0))
+    .color(conrod_core::color::Color::Rgba(1.0,1.0,1.0,0.0))
     .set(new_widget!(), ui)
   {
     let delta = 10.0;

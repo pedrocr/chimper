@@ -65,6 +65,7 @@ pub struct Chimper {
   pub imagepadding: f64,
   pub use_sidepane: bool,
   pub logoid: conrod_core::image::Id,
+  pub temp_tint_image_id: conrod_core::image::Id,
   pub ids: ChimperIds,
   pub sideopt: bool,
   pub directory: std::path::PathBuf,
@@ -76,7 +77,7 @@ pub struct Chimper {
 }
 
 impl Chimper {
-  fn new(logoid: conrod_core::image::Id, path: Option<PathBuf>, ui: &mut conrod_core::Ui) -> Self {
+  fn new(logoid: conrod_core::image::Id, temp_tint_image_id: conrod_core::image::Id, path: Option<PathBuf>, ui: &mut conrod_core::Ui) -> Self {
     let path = if let Some(path) = path {
       if path.is_absolute() {
         path
@@ -104,6 +105,7 @@ impl Chimper {
       use_sidepane,
       imagepadding: 20.0,
       logoid,
+      temp_tint_image_id,
       ids: ChimperIds::new(ui.widget_id_generator()),
       file,
       directory,
@@ -144,6 +146,11 @@ pub fn run_app(path: Option<PathBuf>) {
   let texture = glium::texture::SrgbTexture2d::new(&display, raw).unwrap();
   let logoid = image_map.insert(texture);
 
+  let (dims, data) = ops::tolab::temp_tint_image();
+  let raw = glium::texture::RawImage2d::from_raw_rgba_reversed(&data, dims);
+  let texture = glium::texture::SrgbTexture2d::new(&display, raw).unwrap();
+  let temp_tint_image_id = image_map.insert(texture);
+
   // A channel to send events from the main `winit` thread to the conrod thread.
   let (event_tx, event_rx) = std::sync::mpsc::channel();
   // A channel to send app events from the main `winit` thread to the conrod thread.
@@ -170,13 +177,14 @@ pub fn run_app(path: Option<PathBuf>) {
     render_tx: std::sync::mpsc::Sender<conrod_core::render::OwnedPrimitives>,
     events_loop_proxy: glium::glutin::event_loop::EventLoopProxy<()>,
     logoid: conrod_core::image::Id,
+    temp_tint_image_id: conrod_core::image::Id,
     path: Option<PathBuf>,
   ) {
     // Construct our `Ui`.
     let mut ui = conrod_core::UiBuilder::new([WIN_W, WIN_H]).build();
     ui.fonts.insert(Font::from_bytes(include_bytes!("../../fonts/NotoSans-Regular.ttf")).unwrap());
 
-    let mut chimp = Chimper::new(logoid, path, &mut ui);
+    let mut chimp = Chimper::new(logoid, temp_tint_image_id, path, &mut ui);
 
     // Many widgets require another frame to finish drawing after clicks or hovers, so we
     // insert an update into the conrod loop using this `bool` after each event.
@@ -349,6 +357,7 @@ pub fn run_app(path: Option<PathBuf>) {
     render_tx,
     events_loop_proxy,
     logoid,
+    temp_tint_image_id,
     path
   ));
 

@@ -99,7 +99,7 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell, id: WidgetId) -> f64 {
     tint = etint;
     altered = true;
   }
-  voffset += 300.0 + 36.0 * 0.5;
+  voffset += 300.0;
 
   if altered {
     let deltatemp = 10.0;

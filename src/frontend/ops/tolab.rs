@@ -4,8 +4,8 @@ use imagepipe::color_conversions::*;
 static MIN_TEMP: f32 = 2000.0;
 static MAX_TEMP: f32 = 20000.0;
 
-static MIN_TINT: f32 = 8000.0;
-static MAX_TINT: f32 = 20000.0;
+static MIN_TINT: f32 = 0.8;
+static MAX_TINT: f32 = 1.5;
 
 pub fn temp_tint_image() -> ((u32, u32), Vec<u8>) {
   let width = 500;
@@ -58,7 +58,7 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell, id: WidgetId) -> f64 {
   voffset += 36.0;
 
   voffset += 150.0;
-  label!(60.0, 10.0, &format!("Tint\n{}", otint as u32), Justify::Center);
+  label!(60.0, 10.0, &format!("Tint\n{:.2}", otint), Justify::Center);
   voffset -= 150.0;
 
   widget::Image::new(chimper.temp_tint_image_id)

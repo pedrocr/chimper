@@ -60,7 +60,7 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) {
     draw_op!("basecurve",  basecurve, SelectedOp::Basecurve);
     draw_op!("transform",  transform, SelectedOp::Transform);
 
-    assert!(voffset < 1000.0); // shut up the compiler about the last assignment never being read
+    assert!(voffset < 10000.0); // shut up the compiler about the last assignment never being read
     assert!(numop < 1000); // shut up the compiler about the last assignment never being read
   }
 }

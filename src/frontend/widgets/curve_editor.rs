@@ -88,7 +88,8 @@ impl Widget for CurveEditor {
     type Event = Option<Vec<(f32, f32)>>;
 
     fn init_state(&self, id_gen: widget::id::Generator) -> Self::State {
-        let ids = Ids::new(id_gen, self.points.len());
+        // Save an extra Id for when an event creates a point
+        let ids = Ids::new(id_gen, self.points.len() + 1);
         State {
             ids,
         }
@@ -118,27 +119,21 @@ impl Widget for CurveEditor {
         let border = style.border(ui.theme());
         let inner_rect = rect.pad(border);
 
-        let (x, y) = points[0];
-
-        let mut new_x = x;
-        let mut new_y = y;
+        let mut event = None;
         if let Some(mouse) = ui.widget_input(id).mouse() {
             if mouse.buttons.left().is_down() {
                 let mouse_abs_xy = mouse.abs_xy();
                 let clamped_x = inner_rect.x.clamp_value(mouse_abs_xy[0]);
                 let clamped_y = inner_rect.y.clamp_value(mouse_abs_xy[1]);
                 let (l, r, b, t) = inner_rect.l_r_b_t();
-                new_x = map_range(clamped_x, l, r, range_x.0, range_x.1);
-                new_y = map_range(clamped_y, b, t, range_y.0, range_y.1);
+                let new_x = map_range(clamped_x, l, r, range_x.0, range_x.1);
+                let new_y = map_range(clamped_y, b, t, range_y.0, range_y.1);
+
+                if points.len() == 0 || points[0].0 != new_x || points[0].1 != new_y {
+                    event = Some(vec![(new_x, new_y)])
+                }
             }
         }
-
-        // If the value across either axis has changed, produce an event.
-        let event = if x != new_x || y != new_y {
-            Some(vec![(new_x, new_y)])
-        } else {
-            None
-        };
 
         let color = style.color(ui.theme());
         let line_color = style.line_color(ui.theme()).with_alpha(1.0);

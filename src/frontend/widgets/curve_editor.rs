@@ -42,6 +42,7 @@ pub struct Style {
 
 struct Ids {
     rectangle: conrod_core::widget::Id,
+    line: conrod_core::widget::Id,
     points: conrod_core::widget::id::List,
 }
 
@@ -51,6 +52,7 @@ impl Ids {
         points.resize(npoints, &mut generator);
         Ids {
             rectangle: generator.next(),
+            line: generator.next(),
             points,
         }
     }
@@ -143,7 +145,6 @@ impl Widget for CurveEditor {
 
         // The backdrop **BorderedRectangle** widget.
         let dim = rect.dim();
-
         let border = style.border(ui.theme());
         let border_color = style.border_color(ui.theme());
         widget::BorderedRectangle::new(dim)
@@ -153,6 +154,15 @@ impl Widget for CurveEditor {
             .border(border)
             .border_color(border_color)
             .set(state.ids.rectangle, ui);
+
+        // The line that connects the points
+        let spline = imagepipe::SplineFunc::new(&points);
+        widget::plot_path::PlotPath::new(0.0, 1.0, 0.0, 1.0, |val| spline.interpolate(val))
+            .middle_of(id)
+            .graphics_for(id)
+            .color(line_color)
+            .thickness(2.0)
+            .set(state.ids.line, ui);
 
         // The points in the curve
         for (i,(x,y)) in points.into_iter().enumerate() {

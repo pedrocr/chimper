@@ -16,7 +16,7 @@ extern crate image;
 
 use crate::frontend::*;
 use crate::backend::cache::*;
-
+use crate::backend::export::*;
 
 widget_ids!(
 pub struct ChimperIds {
@@ -24,6 +24,7 @@ pub struct ChimperIds {
   ops_settings[],
   ops_headers[],
   ops_resets[],
+  ops_export,
 
   op_rawinput[],
   op_tolab[],
@@ -76,10 +77,11 @@ pub struct Chimper {
   pub ops: Option<(imagepipe::PipelineOps, imagepipe::PipelineOps)>,
   pub selected_op: SelectedOp,
   pub fullscreen: bool,
+  pub export_request_tx: std::sync::mpsc::Sender<RequestedExport>,
 }
 
 impl Chimper {
-  fn new(logoid: conrod_core::image::Id, temp_tint_image_id: conrod_core::image::Id, path: Option<PathBuf>, ui: &mut conrod_core::Ui) -> Self {
+  fn new(logoid: conrod_core::image::Id, temp_tint_image_id: conrod_core::image::Id, path: Option<PathBuf>, ui: &mut conrod_core::Ui, export_request_tx: std::sync::mpsc::Sender<RequestedExport>) -> Self {
     let path = if let Some(path) = path {
       if path.is_absolute() {
         path
@@ -116,6 +118,7 @@ impl Chimper {
       ops: None,
       selected_op: SelectedOp::None,
       fullscreen: false,
+      export_request_tx,
     }
   }
 }
@@ -163,6 +166,8 @@ pub fn run_app(path: Option<PathBuf>) {
   let events_loop_proxy = event_loop.create_proxy();
   // A channel to request images from the cache thread
   let (image_request_tx, image_request_rx) = std::sync::mpsc::channel();
+  // A channel to request images from the export thread
+  let (export_request_tx, export_request_rx) = std::sync::mpsc::channel();
   // A channel to receive images from the cache thread
   let (image_result_tx, image_result_rx) = std::sync::mpsc::channel();
   // A channel to send images from the main thread to the conrod thread
@@ -176,6 +181,7 @@ pub fn run_app(path: Option<PathBuf>) {
     app_event_rx: std::sync::mpsc::Receiver<AppEvent>,
     image_displayable_rx: std::sync::mpsc::Receiver<DisplayableState>,
     image_request_tx: std::sync::mpsc::Sender<RequestedImage>,
+    export_request_tx: std::sync::mpsc::Sender<RequestedExport>,
     render_tx: std::sync::mpsc::Sender<conrod_core::render::OwnedPrimitives>,
     events_loop_proxy: glium::glutin::event_loop::EventLoopProxy<()>,
     logoid: conrod_core::image::Id,
@@ -186,7 +192,7 @@ pub fn run_app(path: Option<PathBuf>) {
     let mut ui = conrod_core::UiBuilder::new([WIN_W, WIN_H]).build();
     ui.fonts.insert(Font::from_bytes(include_bytes!("../../fonts/NotoSans-Regular.ttf")).unwrap());
 
-    let mut chimp = Chimper::new(logoid, temp_tint_image_id, path, &mut ui);
+    let mut chimp = Chimper::new(logoid, temp_tint_image_id, path, &mut ui, export_request_tx);
 
     // Many widgets require another frame to finish drawing after clicks or hovers, so we
     // insert an update into the conrod loop using this `bool` after each event.
@@ -341,6 +347,21 @@ pub fn run_app(path: Option<PathBuf>) {
     }
   }
 
+  fn run_export(
+    export_request_rx: std::sync::mpsc::Receiver<RequestedExport>,
+  ) {
+    'export: loop {
+      // Block until we either get a request or the other end closes and we'
+      let req = match export_request_rx.recv() {
+        Err(_) => break 'export,
+        Ok(req) => req,
+      };
+
+      // Do the export itself
+      export_file(&req);
+    }
+  }
+
   // Draws the given `primitives` to the given `Display`.
   fn draw(
     display: &glium::Display,
@@ -361,6 +382,7 @@ pub fn run_app(path: Option<PathBuf>) {
     app_event_rx,
     image_displayable_rx,
     image_request_tx,
+    export_request_tx,
     render_tx,
     events_loop_proxy,
     logoid,
@@ -374,6 +396,9 @@ pub fn run_app(path: Option<PathBuf>) {
     image_result_tx,
     events_loop_proxy2,
   ));
+
+  // Spawn the export loop on its own thread.
+  std::thread::spawn(move || run_export(export_request_rx));
 
   // Run the `winit` loop.
   let mut is_waken = false;

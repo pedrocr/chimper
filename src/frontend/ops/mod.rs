@@ -9,6 +9,7 @@ pub use self::imagepipe::ImageOp;
 pub use crate::frontend::widgets::*;
 
 use crate::frontend::main::*;
+use crate::backend::export::*;
 
 mod rawinput;
 pub mod tolab;
@@ -71,6 +72,26 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) {
     draw_op!("colorspace", tolab,     SelectedOp::ToLab);
     draw_op!("basecurve",  basecurve, SelectedOp::Basecurve);
     draw_op!("transform",  transform, SelectedOp::Transform);
+
+    for _ in widget::Button::new()
+      .label("Export")
+      .w_of(chimper.ids.setcont)
+      .h(30.0)
+      .bottom_left_of(chimper.ids.setcont)
+      .set(chimper.ids.ops_export, ui)
+    {
+      if let Some(ref file) = chimper.file {
+        let file = file.clone();
+        let ops = if let Some((ref ops, _)) = chimper.ops {
+          Some(ops.clone())
+        } else {
+          None
+        };
+        chimper.export_request_tx.send(RequestedExport{file, ops}).unwrap();
+      } else {
+        log::error!("Trying to export with no file selected!");
+      }
+    }
 
     assert!(voffset < 10000.0); // shut up the compiler about the last assignment never being read
     assert!(numop < 1000); // shut up the compiler about the last assignment never being read

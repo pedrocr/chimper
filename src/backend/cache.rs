@@ -16,6 +16,7 @@ pub struct RequestedImage {
 pub struct ImageOutput {
   pub image: SRGBImage,
   pub ops: imagepipe::PipelineOps,
+  pub default_ops: imagepipe::PipelineOps,
   pub maxwidth: u32,
   pub maxheight: u32,
 }
@@ -102,6 +103,7 @@ impl ImageCache {
     };
     pipeline.globals.settings.maxwidth = maxwidth as usize;
     pipeline.globals.settings.maxheight = maxheight as usize;
+    let default_ops = pipeline.ops.clone();
     if let Some(ref ops) = req.ops {
       pipeline.ops = ops.clone();
     }
@@ -122,6 +124,7 @@ impl ImageCache {
     let value = Arc::new(ImageOutput {
       image: decoded,
       ops: pipeline.ops.clone(),
+      default_ops,
       maxwidth: maxsize.0,
       maxheight: maxsize.1,
     });

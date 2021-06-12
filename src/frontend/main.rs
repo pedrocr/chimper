@@ -23,6 +23,7 @@ pub struct ChimperIds {
   background, imgcanvas, dragcanvas, setcanvas, settop, setcont, raw_image, chimper, filenav,
   ops_settings[],
   ops_headers[],
+  ops_resets[],
 
   op_rawinput[],
   op_tolab[],
@@ -49,6 +50,7 @@ pub struct DisplayableImage {
   pub maxwidth: u32,
   pub maxheight: u32,
   pub ops: imagepipe::PipelineOps,
+  pub default_ops: imagepipe::PipelineOps,
 }
 
 #[derive(Debug, Clone)]
@@ -71,7 +73,7 @@ pub struct Chimper {
   pub directory: std::path::PathBuf,
   pub file: Option<String>,
   pub image: DisplayableState,
-  pub ops: Option<imagepipe::PipelineOps>,
+  pub ops: Option<(imagepipe::PipelineOps, imagepipe::PipelineOps)>,
   pub selected_op: SelectedOp,
   pub fullscreen: bool,
 }
@@ -245,11 +247,11 @@ pub fn run_app(path: Option<PathBuf>) {
               new_file = true;
               chimp.ops = None;
             } else if let Some(ref currops) = chimp.ops {
-              if currops != &(disp.ops) {
+              if currops.0 != disp.ops {
                 need_new_image = true;
               }
             } else {
-              chimp.ops = Some(disp.ops.clone());
+              chimp.ops = Some((disp.ops.clone(), disp.default_ops.clone()));
             }
             if ui.win_w as u32 > disp.maxwidth || ui.win_h  as u32 > disp.maxheight {
               need_new_image = true;
@@ -266,11 +268,16 @@ pub fn run_app(path: Option<PathBuf>) {
 
         if need_new_image {
           // We have a new image so we need to request it
+          let reqops = if let Some((ref ops, _)) = chimp.ops {
+            Some(ops.clone())
+          } else {
+            None
+          };
           let req = RequestedImage {
             file: file.clone(),
             width: ui.win_w as u32,
             height: ui.win_h as u32,
-            ops: chimp.ops.clone(),
+            ops: reqops,
           };
           image_request_tx.send(req.clone()).unwrap();
           let image = match (new_file, chimp.image) {
@@ -475,6 +482,7 @@ pub fn run_app(path: Option<PathBuf>) {
                   maxwidth,
                   maxheight,
                   ops: image.ops.clone(),
+                  default_ops: image.default_ops.clone(),
                 })
               } else {
                 DisplayableState::Broken(image_result.file.clone())

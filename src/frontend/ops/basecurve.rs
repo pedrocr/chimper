@@ -1,8 +1,25 @@
 use crate::frontend::ops::*;
 
+pub fn is_unchanged(chimper: &Chimper) -> bool {
+  if let Some(ref ops) = chimper.ops {
+    let (ops, default_ops) =  ops;
+    return ops.basecurve.shash() == default_ops.basecurve.shash()
+  }
+  unreachable!();
+}
+
+pub fn reset(chimper: &mut Chimper) {
+  if let Some(ref mut ops) = chimper.ops {
+    let (ops, default_ops) =  ops;
+    ops.basecurve = default_ops.basecurve.clone();
+    return;
+  }
+  unreachable!();
+}
+
 pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell, id: WidgetId) -> f64 {
   let ids = &mut chimper.ids;
-  let ops = if let Some(ref mut ops) = chimper.ops { ops } else {unreachable!()};
+  let ops = if let Some((ref mut ops,_)) = chimper.ops { ops } else {unreachable!()};
   let mut numids = 0;
   macro_rules! new_widget {
     () => {{

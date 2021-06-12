@@ -5,6 +5,7 @@ use conrod_core::text::Justify;
 
 extern crate imagepipe;
 pub use self::imagepipe::PipelineOps;
+pub use self::imagepipe::ImageOp;
 
 use crate::frontend::main::*;
 
@@ -23,6 +24,7 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) {
         if chimper.ids.ops_headers.len() < numop + 1 {
           chimper.ids.ops_headers.resize(numop+1, &mut ui.widget_id_generator());
           chimper.ids.ops_settings.resize(numop+1, &mut ui.widget_id_generator());
+          chimper.ids.ops_resets.resize(numop+1, &mut ui.widget_id_generator());
         }
 
         for _ in widget::Button::new()
@@ -36,6 +38,16 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) {
             chimper.selected_op = SelectedOp::None;
           } else {
             chimper.selected_op = $selected;
+          }
+        }
+        if !$module::is_unchanged(chimper) {
+          for _ in widget::Button::new()
+            .label("Reset")
+            .w_h(50.0, 30.0)
+            .top_right_with_margins_on(chimper.ids.setcont, voffset, 0.0)
+            .set(chimper.ids.ops_resets[numop], ui)
+          {
+            $module::reset(chimper);
           }
         }
         voffset += 30.0;

@@ -27,9 +27,26 @@ pub fn temp_tint_image() -> ((u32, u32), Vec<u8>) {
   ((width as u32, height as u32), data)
 }
 
+pub fn is_unchanged(chimper: &Chimper) -> bool {
+  if let Some(ref ops) = chimper.ops {
+    let (ops, default_ops) =  ops;
+    return ops.tolab.shash() == default_ops.tolab.shash()
+  }
+  unreachable!();
+}
+
+pub fn reset(chimper: &mut Chimper) {
+  if let Some(ref mut ops) = chimper.ops {
+    let (ops, default_ops) =  ops;
+    ops.tolab = default_ops.tolab;
+    return;
+  }
+  unreachable!();
+}
+
 pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell, id: WidgetId) -> f64 {
   let ids = &mut chimper.ids;
-  let ops = if let Some(ref mut ops) = chimper.ops { ops } else {unreachable!()};
+  let ops = if let Some((ref mut ops,_)) = chimper.ops { ops } else {unreachable!()};
   let mut numids = 0;
   macro_rules! new_widget {
     () => {{

@@ -66,19 +66,10 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell, id: WidgetId) -> f64 {
     .thickness(2.0)
     .color(conrod_core::color::Color::Rgba(0.0,0.0,0.0,1.0))
     .set(new_widget!(), ui);
-  for &(x,y) in &ops.basecurve.points {
-    let xpos = 50.0 + x as f64 * 500.0 - 5.0;
-    let ypos = voffset + 500.0 - y as f64 * 500.0 - 5.0;
-    widget::primitive::shape::circle::Circle::fill(5.0)
-      .top_left_with_margins_on(id, ypos, xpos)
-      .color(conrod_core::color::Color::Rgba(0.0,0.0,0.0,1.0))
-      .set(new_widget!(), ui);
-  }
   let (x, y) = ops.basecurve.points[1].clone();
-  for (x, y) in widget::XYPad::new(x, 0.0, 1.0, y, 0.0, 1.0)
+  for (x, y) in CurveEditor::new((0.0, 1.0), (0.0, 1.0), &[(x,y)])
     .w_h(500.0, 500.0)
     .top_left_with_margins_on(id, voffset, 50.0)
-    .value_font_size(0)
     .color(conrod_core::color::Color::Rgba(1.0,1.0,1.0,0.0))
     .set(new_widget!(), ui)
   {

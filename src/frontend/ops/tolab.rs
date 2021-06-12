@@ -46,7 +46,7 @@ pub fn reset(chimper: &mut Chimper) {
 
 pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell, id: WidgetId) -> f64 {
   let ids = &mut chimper.ids;
-  let ops = if let Some((ref mut ops,_)) = chimper.ops { ops } else {unreachable!()};
+  let (ops, default_ops) = if let Some((ref mut ops, ref default_ops)) = chimper.ops { (ops, default_ops) } else {unreachable!()};
   let mut numids = 0;
   macro_rules! new_widget {
     () => {{
@@ -103,6 +103,17 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell, id: WidgetId) -> f64 {
   widget::Image::new(chimper.temp_tint_image_id)
     .w_h(460.0, 300.0)
     .top_left_with_margins_on(id, voffset, 120.0)
+    .set(new_widget!(), ui);
+
+  // Mark a circle where the default temp is
+  let (mut dtemp, mut dtint) = default_ops.tolab.get_temp();
+  dtemp = dtemp.max(MIN_TEMP).min(MAX_TEMP);
+  dtint = dtint.max(MIN_TINT).min(MAX_TINT);
+  let x = (dtemp - MIN_TEMP) / (MAX_TEMP - MIN_TEMP) * 460.0;
+  let y = (1.0 - (dtint - MIN_TINT) / (MAX_TINT - MIN_TINT)) * 300.0;
+  widget::primitive::shape::circle::Circle::fill(5.0)
+    .top_left_with_margins_on(id, voffset - 5.0 + y as f64, 120.0 - 5.0 + x as f64)
+    .color(conrod_core::color::Color::Rgba(0.0,0.0,0.0,1.0))
     .set(new_widget!(), ui);
 
   for (etemp, etint) in widget::XYPad::new(otemp, MIN_TEMP, MAX_TEMP, otint, MIN_TINT, MAX_TINT)

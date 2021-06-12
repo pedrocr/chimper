@@ -14,24 +14,23 @@ mod basecurve;
 mod transform;
 
 pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) {
-  let ids = &mut chimper.ids;
-  if let Some(ref mut ops) = chimper.ops {
+  if chimper.ops.is_some() {
     let mut voffset = 0.0;
     let mut numop = 0;
 
     macro_rules! draw_op {
       ($name:expr, $module:ident, $selected:expr) => {
-        if ids.ops_headers.len() < numop + 1 {
-          ids.ops_headers.resize(numop+1, &mut ui.widget_id_generator());
-          ids.ops_settings.resize(numop+1, &mut ui.widget_id_generator());
+        if chimper.ids.ops_headers.len() < numop + 1 {
+          chimper.ids.ops_headers.resize(numop+1, &mut ui.widget_id_generator());
+          chimper.ids.ops_settings.resize(numop+1, &mut ui.widget_id_generator());
         }
 
         for _ in widget::Button::new()
           .label($name)
-          .w_of(ids.setcont)
+          .w_of(chimper.ids.setcont)
           .h(30.0)
-          .top_left_with_margins_on(ids.setcont, voffset, 0.0)
-          .set(ids.ops_headers[numop], ui)
+          .top_left_with_margins_on(chimper.ids.setcont, voffset, 0.0)
+          .set(chimper.ids.ops_headers[numop], ui)
         {
           if chimper.selected_op == $selected {
             chimper.selected_op = SelectedOp::None;
@@ -42,14 +41,14 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) {
         voffset += 30.0;
         if chimper.selected_op == $selected {
           widget::Canvas::new()
-            .w_of(ids.setcont)
+            .w_of(chimper.ids.setcont)
             .h(0.0)
             .color(color::GREY)
             .border(0.0)
-            .top_left_with_margins_on(ids.setcont, voffset, 0.0)
-            .set(ids.ops_settings[numop], ui);
-          let contid = ids.ops_settings[numop].clone();
-          voffset += $module::draw_gui(ids, ui, ops, contid);
+            .top_left_with_margins_on(chimper.ids.setcont, voffset, 0.0)
+            .set(chimper.ids.ops_settings[numop], ui);
+          let contid = chimper.ids.ops_settings[numop].clone();
+          voffset += $module::draw_gui(chimper, ui, contid);
         }
         numop += 1;
       };

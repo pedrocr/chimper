@@ -1,6 +1,8 @@
 use crate::frontend::ops::*;
 
-pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id: WidgetId) -> f64 {
+pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell, id: WidgetId) -> f64 {
+  let ids = &mut chimper.ids;
+  let ops = if let Some(ref mut ops) = chimper.ops { ops } else {unreachable!()};
   let mut numids = 0;
   macro_rules! new_widget {
     () => {{

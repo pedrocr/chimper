@@ -8,7 +8,9 @@ static ORIENTATION_NAMES: [&str; 4] = [
   "Rotate 270",
 ];
 
-pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id: WidgetId) -> f64 {
+pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell, id: WidgetId) -> f64 {
+  let ids = &mut chimper.ids;
+  let ops = if let Some(ref mut ops) = chimper.ops { ops } else {unreachable!()};
   ids.op_transform.resize(6, &mut ui.widget_id_generator());
   let id_toggle_h = ids.op_transform[0];
   let id_toggle_v = ids.op_transform[1];

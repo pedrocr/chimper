@@ -6,6 +6,7 @@ use conrod_core::text::Justify;
 extern crate imagepipe;
 pub use self::imagepipe::PipelineOps;
 pub use self::imagepipe::ImageOp;
+pub use crate::frontend::widgets::*;
 
 use crate::frontend::main::*;
 

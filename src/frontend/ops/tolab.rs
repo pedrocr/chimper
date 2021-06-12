@@ -116,10 +116,9 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell, id: WidgetId) -> f64 {
     .color(conrod_core::color::Color::Rgba(0.0,0.0,0.0,1.0))
     .set(new_widget!(), ui);
 
-  for (etemp, etint) in widget::XYPad::new(otemp, MIN_TEMP, MAX_TEMP, otint, MIN_TINT, MAX_TINT)
+  for (etemp, etint) in SimplerXYPad::new(otemp, MIN_TEMP, MAX_TEMP, otint, MIN_TINT, MAX_TINT)
     .w_h(460.0, 300.0)
     .top_left_with_margins_on(id, voffset, 120.0)
-    .value_font_size(0)
     .color(conrod_core::color::Color::Rgba(1.0,1.0,1.0,0.0))
     .set(new_widget!(), ui)
   {

@@ -83,7 +83,7 @@ impl<'a> CurveEditor {
 impl Widget for CurveEditor {
     type State = State;
     type Style = Style;
-    type Event = Option<(f32, f32)>;
+    type Event = Option<Vec<(f32, f32)>>;
 
     fn init_state(&self, id_gen: widget::id::Generator) -> Self::State {
         let ids = Ids::new(id_gen, self.points.len());
@@ -133,7 +133,7 @@ impl Widget for CurveEditor {
 
         // If the value across either axis has changed, produce an event.
         let event = if x != new_x || y != new_y {
-            Some((new_x, new_y))
+            Some(vec![(new_x, new_y)])
         } else {
             None
         };

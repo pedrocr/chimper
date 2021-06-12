@@ -24,18 +24,19 @@ pub fn draw_gui(ids: &mut ChimperIds, ui: &mut UiCell, ops: &mut PipelineOps, id
     };
   }
 
-  label!(500.0, 60.0, "Temperature", Justify::Center);
+  let (otemp, otint) = ops.tolab.get_temp();
+  label!(500.0, 80.0, &format!("Temperature {}K", otemp as u32), Justify::Center);
   voffset += 36.0;
 
   voffset += 150.0;
-  label!(40.0, 10.0, "Tint", Justify::Center);
+  label!(60.0, 10.0, &format!("Tint\n{}", otint as u32), Justify::Center);
   voffset -= 150.0;
 
-  let (otemp, otint) = ops.tolab.get_temp();
   for (temp, tint) in widget::XYPad::new(otemp, 2000.0, 20000.0, otint, 8000.0, 20000.0)
     .w_h(500.0, 300.0)
-    .top_left_with_margins_on(id, voffset, 60.0)
-    .value_font_size(16)
+    .top_left_with_margins_on(id, voffset, 80.0)
+    .value_font_size(0)
+    .color(conrod_core::color::Color::Rgba(1.0,1.0,1.0,1.0))
     .set(new_widget!(), ui)
   {
     let delta = 10.0;

@@ -92,8 +92,8 @@ impl Widget for CurveEditor {
     type Event = Option<Vec<(f32, f32)>>;
 
     fn init_state(&self, id_gen: widget::id::Generator) -> Self::State {
-        // Save an extra Id for when an event creates a point
-        let ids = Ids::new(id_gen, self.points.len() + 1);
+        // Save an extra Id for when an event creates a point and another for hover
+        let ids = Ids::new(id_gen, self.points.len() + 2);
         State {
             ids,
         }
@@ -124,17 +124,24 @@ impl Widget for CurveEditor {
         let inner_rect = rect.pad(border);
 
         let mut event = None;
+        let mut hover = None;
         if let Some(mouse) = ui.widget_input(id).mouse() {
+            let mouse_abs_xy = mouse.abs_xy();
+            let clamped_x = inner_rect.x.clamp_value(mouse_abs_xy[0]);
+            let clamped_y = inner_rect.y.clamp_value(mouse_abs_xy[1]);
+            let (l, r, b, t) = inner_rect.l_r_b_t();
+            let new_x = map_range(clamped_x, l, r, range_x.0, range_x.1);
+            let new_y = map_range(clamped_y, b, t, range_y.0, range_y.1);
             if mouse.buttons.left().is_down() {
-                let mouse_abs_xy = mouse.abs_xy();
-                let clamped_x = inner_rect.x.clamp_value(mouse_abs_xy[0]);
-                let clamped_y = inner_rect.y.clamp_value(mouse_abs_xy[1]);
-                let (l, r, b, t) = inner_rect.l_r_b_t();
-                let new_x = map_range(clamped_x, l, r, range_x.0, range_x.1);
-                let new_y = map_range(clamped_y, b, t, range_y.0, range_y.1);
-
                 if points.len() == 0 || points[0].0 != new_x || points[0].1 != new_y {
                     event = Some(vec![(new_x, new_y)])
+                }
+            } else {
+                let spline = imagepipe::SplineFunc::new(&points);
+                // +-2% feels reasonable for the phantom point display
+                // not too small a target and not too far off that it feels strange
+                if (spline.interpolate(new_x) - new_y).abs() < 0.02 {
+                    hover = Some(new_x);
                 }
             }
         }
@@ -166,14 +173,28 @@ impl Widget for CurveEditor {
             .set(state.ids.line, ui);
 
         // The points in the curve
-        for (i,(x,y)) in points.into_iter().enumerate() {
+        let mut npoint = 0;
+        for (x,y) in points.into_iter() {
           let xpos = x as f64 * dim[0] - point_radius;
           let ypos = dim[1] - y as f64 * dim[1] - point_radius;
           widget::primitive::shape::circle::Circle::fill(point_radius)
             .top_left_with_margins_on(state.ids.rectangle, ypos, xpos)
             .graphics_for(id)
             .color(line_color)
-            .set(state.ids.points[i], ui);
+            .set(state.ids.points[npoint], ui);
+          npoint += 1;
+        }
+
+        // The point on the line the mouse is hovering over, if it exists
+        if let Some(x) = hover {
+          let y = spline.interpolate(x);
+          let xpos = x as f64 * dim[0] - point_radius;
+          let ypos = dim[1] - y as f64 * dim[1] - point_radius;
+          widget::primitive::shape::circle::Circle::fill(point_radius)
+            .top_left_with_margins_on(state.ids.rectangle, ypos, xpos)
+            .graphics_for(id)
+            .color(line_color.with_alpha(0.8))
+            .set(state.ids.points[npoint], ui);
         }
 
         event

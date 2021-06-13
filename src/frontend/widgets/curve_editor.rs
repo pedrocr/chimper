@@ -35,9 +35,12 @@ pub struct Style {
     /// The color of the surrounding rectangle border.
     #[conrod(default = "theme.border_color")]
     pub border_color: Option<Color>,
-    /// The thickness of the XYPad's crosshair lines.
+    /// The thickness of the line
     #[conrod(default = "2.0")]
     pub line_thickness: Option<Scalar>,
+    /// The radius of the points
+    #[conrod(default = "5.0")]
+    pub point_radius: Option<Scalar>,
 }
 
 struct Ids {
@@ -78,6 +81,7 @@ impl<'a> CurveEditor {
 
     builder_methods! {
         pub line_thickness { style.line_thickness = Some(Scalar) }
+        pub point_radius { style.point_radius = Some(Scalar) }
         pub enabled { enabled = bool }
     }
 }
@@ -137,6 +141,8 @@ impl Widget for CurveEditor {
 
         let color = style.color(ui.theme());
         let line_color = style.line_color(ui.theme()).with_alpha(1.0);
+        let line_thickness = style.line_thickness(ui.theme());
+        let point_radius = style.point_radius(ui.theme());
 
         // The backdrop **BorderedRectangle** widget.
         let dim = rect.dim();
@@ -156,14 +162,14 @@ impl Widget for CurveEditor {
             .middle_of(id)
             .graphics_for(id)
             .color(line_color)
-            .thickness(2.0)
+            .thickness(line_thickness)
             .set(state.ids.line, ui);
 
         // The points in the curve
         for (i,(x,y)) in points.into_iter().enumerate() {
-          let xpos = x as f64 * dim[0] - 5.0;
-          let ypos = dim[1] - y as f64 * dim[1] - 5.0;
-          widget::primitive::shape::circle::Circle::fill(5.0)
+          let xpos = x as f64 * dim[0] - point_radius;
+          let ypos = dim[1] - y as f64 * dim[1] - point_radius;
+          widget::primitive::shape::circle::Circle::fill(point_radius)
             .top_left_with_margins_on(state.ids.rectangle, ypos, xpos)
             .graphics_for(id)
             .color(line_color)

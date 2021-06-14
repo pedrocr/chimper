@@ -178,6 +178,21 @@ impl Widget for CurveEditor {
                 }
                 event = Some(newpoints);
             } else {
+                // Right button clicks are used to remove points
+                // We cheat a little as clicking and dragging allows removing
+                // points as if it were a paint brush. Should be fine in practice.
+                if mouse.buttons.right().is_down() {
+                    let mut newpoints = points.clone();
+                    let mut pos = 0;
+                    for &(x,y) in &points {
+                        if (x - new_x).abs() < 0.01 && (y - new_y).abs() < 0.01 {
+                            newpoints.remove(pos);
+                            event = Some(newpoints);
+                            break;
+                        }
+                        pos += 1;
+                    }
+                }
                 state.update(|state| state.currpoint = None);
                 let spline = imagepipe::SplineFunc::new(&points);
                 // +-2% feels reasonable for the phantom point display

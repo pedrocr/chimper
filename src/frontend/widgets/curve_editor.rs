@@ -64,6 +64,7 @@ impl Ids {
 /// The state of the XYPad.
 pub struct State {
     ids: Ids,
+    currpoint: Option<usize>,
 }
 
 impl<'a> CurveEditor {
@@ -92,10 +93,11 @@ impl Widget for CurveEditor {
     type Event = Option<Vec<(f32, f32)>>;
 
     fn init_state(&self, id_gen: widget::id::Generator) -> Self::State {
-        // Save an extra Id for when an event creates a point and another for hover
-        let ids = Ids::new(id_gen, self.points.len() + 2);
+        // Save an extra for hover
+        let ids = Ids::new(id_gen, self.points.len() + 1);
         State {
             ids,
+            currpoint: None,
         }
     }
 
@@ -120,6 +122,12 @@ impl Widget for CurveEditor {
             ..
         } = self;
 
+        // Resize the Ids to however many points we will be displaying
+        state.update(|state| {
+            let id_gen = ui.widget_id_generator();
+            state.ids = Ids::new(id_gen, points.len() + 1);
+        });
+
         let border = style.border(ui.theme());
         let inner_rect = rect.pad(border);
 
@@ -133,10 +141,44 @@ impl Widget for CurveEditor {
             let new_x = map_range(clamped_x, l, r, range_x.0, range_x.1);
             let new_y = map_range(clamped_y, b, t, range_y.0, range_y.1);
             if mouse.buttons.left().is_down() {
-                if points.len() == 0 || points[0].0 != new_x || points[0].1 != new_y {
-                    event = Some(vec![(new_x, new_y)])
+                let mut newpoints = points.clone();
+                if let Some(pos) = state.currpoint {
+                    // We were already dragging a point, just replace the values
+                    // but don't allow going below the previous point or above
+                    // the next one
+                    let min_x = if pos > 0 { newpoints[pos-1].0 } else { 0.0 };
+                    let max_x = if newpoints.len() > 1 && pos < newpoints.len()-1 {
+                      newpoints[pos+1].0
+                    } else { 1.0 };
+                    let new_x = if new_x < min_x { min_x } else { new_x };
+                    let new_x = if new_x > max_x { max_x } else { new_x };
+                    newpoints[pos] = (new_x, new_y);
+                } else {
+                    let mut newpos = None;
+                    let mut insertpos = 0;
+                    // First look for a point that's very close by to grab
+                    for &(x,y) in &points {
+                        if (x - new_x).abs() < 0.01 && (y - new_y).abs() < 0.01 {
+                            newpoints[insertpos] = (new_x, new_y);
+                            newpos = Some(insertpos);
+                            break;
+                        }
+                        if x > new_x {
+                            // We're past the point we need to add
+                            break;
+                        }
+                        insertpos += 1;
+                    }
+                    if newpos.is_none() {
+                        // We didn't replace a point so we need to add a new one
+                        newpoints.insert(insertpos, (new_x, new_y));
+                        newpos = Some(insertpos);
+                    }
+                    state.update(|state| state.currpoint = newpos);
                 }
+                event = Some(newpoints);
             } else {
+                state.update(|state| state.currpoint = None);
                 let spline = imagepipe::SplineFunc::new(&points);
                 // +-2% feels reasonable for the phantom point display
                 // not too small a target and not too far off that it feels strange

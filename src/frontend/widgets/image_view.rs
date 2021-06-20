@@ -18,6 +18,8 @@ enum ResizeMode {
   BottomLeft,
 }
 
+static MIN_SIZE: f64 = 0.01;
+
 impl ResizeMode {
   fn top(&self) -> bool {
     *self == ResizeMode::Top || *self == ResizeMode::TopLeft || *self == ResizeMode::TopRight
@@ -150,22 +152,27 @@ impl Widget for ImageView {
         highlight = drag.mode;
         let delta_x = new_x - drag.x;
         let delta_y = new_y - drag.y;
-        if drag.mode.left() {
-          crop_left += delta_x;
-          if crop_left < 0.0 {crop_left = 0.0};
+        macro_rules! drag_calc {
+          ($mode:ident, $crop:ident, $crop_opposite:ident, $drag:expr) => {{
+            if drag.mode.$mode() {
+              $crop += $drag;
+              if $crop < 0.0 {$crop = 0.0};
+              let steal = -(1.0 - $crop - $crop_opposite - MIN_SIZE);
+              if steal > 0.0 {
+                $crop_opposite -= steal;
+              }
+              if $crop_opposite < 0.0 {
+                $crop += $crop_opposite;
+                $crop_opposite = 0.0;
+              }
+              if $crop < 0.0 {$crop = 0.0};
+            }
+          }}
         }
-        if drag.mode.right() {
-          crop_right -= delta_x;
-          if crop_right < 0.0 {crop_right = 0.0};
-        }
-        if drag.mode.top() {
-          crop_top += delta_y;
-          if crop_top < 0.0 {crop_top = 0.0};
-        }
-        if drag.mode.bottom() {
-          crop_bottom -= delta_y;
-          if crop_bottom < 0.0 {crop_bottom = 0.0};
-        }
+        drag_calc!(left, crop_left, crop_right, delta_x);
+        drag_calc!(right, crop_right, crop_left, -delta_x);
+        drag_calc!(top, crop_top, crop_bottom, delta_y);
+        drag_calc!(bottom, crop_bottom, crop_top, -delta_y);
         if !mouse.buttons.left().is_down() {
           // We're no longer clicking so reset the state
           state.update(|state| state.drag = None);

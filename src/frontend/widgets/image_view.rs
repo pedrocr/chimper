@@ -172,21 +172,21 @@ impl Widget for ImageView {
           event = Some((crop_top, crop_right, crop_bottom, crop_left));
         }
       } else {
-        if new_x < 0.0 && new_y < 0.0 {
+        if new_x < 0.0+crop_left && new_y < 0.0+crop_top {
           highlight = ResizeMode::TopLeft;
-        } else if new_x < 0.0 && new_y > 1.0 {
+        } else if new_x < 0.0+crop_left && new_y > 1.0-crop_bottom {
           highlight = ResizeMode::BottomLeft;
-        } else if new_x > 1.0 && new_y < 0.0 {
+        } else if new_x > 1.0-crop_right && new_y < 0.0+crop_top {
           highlight = ResizeMode::TopRight;
-        } else if new_x > 1.0 && new_y > 1.0 {
+        } else if new_x > 1.0-crop_right && new_y > 1.0-crop_bottom {
           highlight = ResizeMode::BottomRight;
-        } else if new_x < 0.0 {
+        } else if new_x < 0.0+crop_left {
           highlight = ResizeMode::Left;
-        } else if new_y < 0.0 {
+        } else if new_y < 0.0+crop_top {
           highlight = ResizeMode::Top;
-        } else if new_x > 1.0 {
+        } else if new_x > 1.0-crop_right {
           highlight = ResizeMode::Right;
-        } else if new_y > 1.0 {
+        } else if new_y > 1.0-crop_bottom {
           highlight = ResizeMode::Bottom;
         }
 
@@ -210,22 +210,22 @@ impl Widget for ImageView {
       .graphics_for(id)
       .set(state.ids.image, ui);
     widget::primitive::shape::rectangle::Rectangle::fill([handle_size, height])
-      .top_left_with_margins_on(id, 0.0, width * crop_left)
+      .top_left_with_margins_on(id, 0.0, iwidth * crop_left)
       .graphics_for(id)
       .color(if highlight.left() {color_highlight} else {color})
       .set(state.ids.handles[0], ui);
     widget::primitive::shape::rectangle::Rectangle::fill([handle_size, height])
-      .top_right_with_margins_on(id, 0.0, width * crop_right)
+      .top_right_with_margins_on(id, 0.0, iwidth * crop_right)
       .graphics_for(id)
       .color(if highlight.right() {color_highlight} else {color})
       .set(state.ids.handles[1], ui);
     widget::primitive::shape::rectangle::Rectangle::fill([width, handle_size])
-      .top_left_with_margins_on(id, height * crop_top, 0.0)
+      .top_left_with_margins_on(id, iheight * crop_top, 0.0)
       .graphics_for(id)
       .color(if highlight.top() {color_highlight} else {color})
       .set(state.ids.handles[2], ui);
     widget::primitive::shape::rectangle::Rectangle::fill([width, handle_size])
-      .bottom_left_with_margins_on(id, height * crop_bottom, 0.0)
+      .bottom_left_with_margins_on(id, iheight * crop_bottom, 0.0)
       .graphics_for(id)
       .color(if highlight.bottom() {color_highlight} else {color})
       .set(state.ids.handles[3], ui);

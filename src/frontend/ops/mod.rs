@@ -15,9 +15,41 @@ mod rawinput;
 pub mod tolab;
 mod basecurve;
 mod transform;
+mod rotatecrop;
 
 pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) {
   if chimper.ops.is_some() {
+    if chimper.selected_op == SelectedOp::RotateCrop {
+      // When we enter the crop editing op, initialize that state in the interface
+      // and set the crops to 0.0 on the pipeline so we get the full image.
+      if chimper.crops.is_none() {
+        if let Some(ref mut ops) = chimper.ops {
+          chimper.crops = Some((
+            ops.0.rotatecrop.crop_top as f64,
+            ops.0.rotatecrop.crop_right as f64,
+            ops.0.rotatecrop.crop_bottom as f64,
+            ops.0.rotatecrop.crop_left as f64,
+          ));
+          ops.0.rotatecrop.crop_top = 0.0;
+          ops.0.rotatecrop.crop_right = 0.0;
+          ops.0.rotatecrop.crop_bottom = 0.0;
+          ops.0.rotatecrop.crop_left = 0.0;
+        }
+      }
+    } else {
+      // When we leave the crop editing op save the state into the pipeline so
+      // the changes get applied
+      if let Some(ref crops) = chimper.crops {
+        if let Some(ref mut ops) = chimper.ops {
+          ops.0.rotatecrop.crop_top = crops.0 as f32;
+          ops.0.rotatecrop.crop_right = crops.1 as f32;
+          ops.0.rotatecrop.crop_bottom = crops.2 as f32;
+          ops.0.rotatecrop.crop_left = crops.3 as f32;
+        }
+        chimper.crops = None;
+      }
+    }
+
     let mut voffset = 0.0;
     let mut numop = 0;
 
@@ -72,6 +104,7 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut UiCell) {
     draw_op!("colorspace", tolab,     SelectedOp::ToLab);
     draw_op!("basecurve",  basecurve, SelectedOp::Basecurve);
     draw_op!("transform",  transform, SelectedOp::Transform);
+    draw_op!("rotate and crop",  rotatecrop, SelectedOp::RotateCrop);
 
     for _ in widget::Button::new()
       .label("Export")

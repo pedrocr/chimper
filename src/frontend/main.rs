@@ -40,6 +40,7 @@ pub enum SelectedOp {
   ToLab,
   Basecurve,
   Transform,
+  RotateCrop,
 }
 
 #[derive(Debug, Clone)]

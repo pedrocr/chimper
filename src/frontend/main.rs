@@ -78,6 +78,7 @@ pub struct Chimper {
   pub selected_op: SelectedOp,
   pub fullscreen: bool,
   pub export_request_tx: std::sync::mpsc::Sender<RequestedExport>,
+  pub crops: Option<(f64,f64,f64,f64)>,
 }
 
 impl Chimper {
@@ -119,6 +120,7 @@ impl Chimper {
       selected_op: SelectedOp::None,
       fullscreen: false,
       export_request_tx,
+      crops: None,
     }
   }
 }

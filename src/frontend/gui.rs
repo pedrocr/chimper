@@ -5,6 +5,7 @@ extern crate imagepipe;
 use crate::frontend::main::Chimper;
 use crate::frontend::main::DisplayableState;
 use crate::frontend::ops;
+use crate::frontend::widgets::ImageView;
 
 pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod_core::Ui) -> bool {
   let ui = &mut ui.set_widgets();
@@ -46,10 +47,12 @@ pub fn draw_gui(chimper: &mut Chimper, ui: &mut conrod_core::Ui) -> bool {
       } else {
         height = width / scale;
       }
-      widget::Image::new(image.id)
+      for crops in ImageView::new(image.id, chimper.crops)
         .w_h(width, height)
         .middle_of(ids.imgcanvas)
-        .set(ids.raw_image, ui);
+        .set(ids.raw_image, ui) {
+        chimper.crops = Some(crops);
+      }
     }
 
     if sidewidth > 0.0 {

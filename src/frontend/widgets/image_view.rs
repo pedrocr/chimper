@@ -166,16 +166,10 @@ impl Widget for ImageView {
           crop_bottom -= delta_y;
           if crop_bottom < 0.0 {crop_bottom = 0.0};
         }
-        event = Some((crop_top, crop_right, crop_bottom, crop_left));
         if !mouse.buttons.left().is_down() {
           // We're no longer clicking so reset the state
           state.update(|state| state.drag = None);
-        } else {
-          state.update(|state| state.drag = Some(Drag {
-            x: new_x,
-            y: new_y,
-            mode: drag.mode,
-          }));
+          event = Some((crop_top, crop_right, crop_bottom, crop_left));
         }
       } else {
         if new_x < 0.0 && new_y < 0.0 {

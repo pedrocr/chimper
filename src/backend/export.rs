@@ -37,7 +37,7 @@ pub fn export_file(req: &RequestedExport) {
     }
   };
   let mut f = BufWriter::new(uf);
-  let mut jpg_encoder = image::jpeg::JpegEncoder::new_with_quality(&mut f, 90);
+  let mut jpg_encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut f, 90);
   match jpg_encoder.encode(&decoded.data, decoded.width as u32, decoded.height as u32, ColorType::Rgb8) {
     Ok(_) => {},
     Err(_) => {

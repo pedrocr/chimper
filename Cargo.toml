@@ -10,18 +10,18 @@ categories = ["multimedia::images"]
 edition = "2018"
 
 [dependencies]
-image = "0.23"
+image = "0.24"
 rand = "0.8"
-conrod_core = "0.73"
-conrod_glium = "0.73"
-conrod_winit = "0.73"
+conrod_core = "0.76"
+conrod_glium = "0.76"
+conrod_winit = "0.76"
 glium = "0.28"
 winit = "0.23"
 log = "0.4"
-env_logger = "0.8"
+env_logger = "0.9"
 
 [dependencies.imagepipe]
-version = "0.4"
+version = "0.5"
 path = "../imagepipe"
 
 [dependencies.multicache]
